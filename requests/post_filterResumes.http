@@ -1,0 +1,9 @@
+curl -X POST "http://localhost:11399/filter-resumes" \
+  -F "files=@Mohamed Kamal25.pdf" \
+  -F "files=@Mohamed Kamal9.pdf" \
+  -F "files=@Mohamed Kamal92.pdf" \
+  -F "files=@Mohamed Kamal925.pdf" \
+  -F "files=@Mohamed Kamal95.pdf" \
+  -F 'keywords=["Network Administration", "Active Directory", "Level 1", "Docker", "AWS"]' \
+  -F "min_score=60" \
+  -F "generate_ai_summary=false"

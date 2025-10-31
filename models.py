@@ -1,0 +1,37 @@
+from pydantic import BaseModel, Field
+from typing import List, Optional
+from datetime import datetime
+
+
+class KeywordConfig(BaseModel):
+    required_keywords: List[str] = Field(
+        ...,
+        description="List of keywords to search for in resumes"
+    )
+    min_score: Optional[int] = Field(
+        None,
+        description="Minimum score threshold for filtering candidates"
+    )
+
+
+class ResumeAnalysis(BaseModel):
+    filename: str
+    text_content: str
+    keywords_found: List[str]
+    keywords_missing: List[str]
+    score: int
+    ai_summary: Optional[str] = None
+    parsed_at: datetime = Field(default_factory=datetime.now)
+
+
+class FilterResponse(BaseModel):
+    total_resumes: int
+    valid_candidates: int
+    rejected_candidates: int
+    csv_file_path: str
+    candidates: List[ResumeAnalysis]
+
+
+class HealthResponse(BaseModel):
+    status: str
+    message: str
