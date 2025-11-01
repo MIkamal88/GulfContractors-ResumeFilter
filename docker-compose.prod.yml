@@ -1,0 +1,57 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gc-resume-filter-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - USE_OPENAI=${USE_OPENAI:-True}
+      - MIN_KEYWORD_SCORE=${MIN_KEYWORD_SCORE:-50}
+      - CSV_OUTPUT_PATH=/app/output/filtered_resumes.csv
+      - RESUME_FOLDER_PATH=/app/resumes
+    volumes:
+      # Named volumes for production isolation and portability
+      - resume-data-output:/app/output
+      - resume-data-storage:/app/resumes
+    restart: always
+    networks:
+      - resume-filter-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend service - uncomment when ready to deploy
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: gc-resume-filter-frontend
+  #   ports:
+  #     - "5173:5173"
+  #   environment:
+  #     - VITE_API_URL=http://backend:8000
+  #   volumes:
+  #     - resume-data-output:/app/output
+  #     - resume-data-storage:/app/resumes
+  #   depends_on:
+  #     backend:
+  #       condition: service_healthy
+  #   restart: always
+  #   networks:
+  #     - resume-filter-network
+
+networks:
+  resume-filter-network:
+    driver: bridge
+
+volumes:
+  resume-data-output:
+    driver: local
+  resume-data-storage:
+    driver: local
