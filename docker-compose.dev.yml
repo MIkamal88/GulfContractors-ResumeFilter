@@ -20,25 +20,22 @@ services:
     networks:
       - resume-filter-network
 
-  # Frontend service - uncomment when ready to deploy
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: gc-resume-filter-frontend-dev
-  #   ports:
-  #     - "5173:5173"
-  #   environment:
-  #     - VITE_API_URL=http://backend:8000
-  #   volumes:
-  #     - ./output:/app/output
-  #     - ./resumes:/app/resumes
-  #   depends_on:
-  #     - backend
-  #   restart: unless-stopped
-  #   networks:
-  #     - resume-filter-network
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gc-resume-filter-frontend-dev
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - resume-filter-network
 
 networks:
   resume-filter-network:
     driver: bridge
+

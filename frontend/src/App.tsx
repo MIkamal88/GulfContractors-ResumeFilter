@@ -1,0 +1,225 @@
+import { useState } from "react";
+import "./App.css";
+import FileUpload from "./components/FileUpload";
+import KeywordInput from "./components/KeywordInput";
+import Results from "./components/Results";
+import { filterResumes, downloadCSV } from "./services/api";
+import type { FilterResponse } from "./types";
+
+function App() {
+  const [files, setFiles] = useState<File[]>([]);
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [minScore, setMinScore] = useState<number>(0);
+  const [generateAiSummary, setGenerateAiSummary] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [results, setResults] = useState<FilterResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFilesSelected = (selectedFiles: File[]) => {
+    setFiles(selectedFiles);
+    setError(null);
+  };
+
+  const handleKeywordsChange = (newKeywords: string[]) => {
+    setKeywords(newKeywords);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (files.length === 0) {
+      setError("Please select at least one resume file");
+      return;
+    }
+
+    if (keywords.length === 0) {
+      setError("Please add at least one keyword");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setResults(null);
+
+    try {
+      const response = await filterResumes(
+        files,
+        keywords,
+        minScore,
+        generateAiSummary,
+      );
+
+      // Open CSV in new tab
+      if (
+        response.csv_file_path &&
+        !response.csv_file_path.includes("not generated")
+      ) {
+        try {
+          const blob = await downloadCSV(response.csv_file_path);
+          const url = window.URL.createObjectURL(blob);
+
+          // Open in new tab
+          window.open(url, "_blank");
+
+          // Clean up the URL object after a short delay
+          setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+        } catch (csvErr) {
+          console.error("Error opening CSV:", csvErr);
+          setError("Analysis completed but failed to open CSV file");
+        }
+      } else if (response.valid_candidates === 0) {
+        setError("No resumes passed the filter. No CSV generated.");
+      }
+
+      // Reset form to landing page
+      setFiles([]);
+      setKeywords([]);
+      setMinScore(0);
+      setGenerateAiSummary(true);
+      setResults(null);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An error occurred while processing resumes",
+      );
+      console.error("Error filtering resumes:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadCSV = async () => {
+    if (!results?.csv_file_path) return;
+
+    try {
+      const blob = await downloadCSV(results.csv_file_path);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `filtered_resumes_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      setError("Failed to download CSV file");
+      console.error("Error downloading CSV:", err);
+    }
+  };
+
+  const handleReset = () => {
+    setFiles([]);
+    setKeywords([]);
+    setMinScore(0);
+    setGenerateAiSummary(true);
+    setResults(null);
+    setError(null);
+  };
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <img
+          className="app-logo"
+          width="200"
+          height="80"
+          src="https://gccld.com/wp-content/uploads/2024/05/gccld-logo.svg"
+          alt="GCCLD Logo"
+        />
+        <div className="app-header-content">
+          <h1>Gulf Contractors Resume Filter</h1>
+          <p className="app-subtitle">
+            Analyze and filter resumes based on keywords with AI-powered
+            summaries
+          </p>
+        </div>
+      </header>
+
+      <main className="app-main">
+        {!results ? (
+          <form onSubmit={handleSubmit} className="upload-form">
+            <div className="form-section">
+              <FileUpload onFilesSelected={handleFilesSelected} files={files} />
+            </div>
+
+            <div className="form-section">
+              <KeywordInput
+                keywords={keywords}
+                onKeywordsChange={handleKeywordsChange}
+              />
+            </div>
+
+            <div className="form-section">
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="minScore">Minimum Score</label>
+                  <input
+                    type="number"
+                    id="minScore"
+                    min="0"
+                    max="100"
+                    value={minScore}
+                    onChange={(e) => setMinScore(Number(e.target.value))}
+                    className="score-input"
+                  />
+                  <p className="input-hint">
+                    Filter resumes with score above this threshold (0-100)
+                  </p>
+                </div>
+
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={generateAiSummary}
+                      onChange={(e) => setGenerateAiSummary(e.target.checked)}
+                    />
+                    <span>Generate AI Summary</span>
+                  </label>
+                  <p className="input-hint">
+                    Enable OpenAI-powered resume summaries
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {error && (
+              <div className="error-message">
+                <span className="error-icon">⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="form-actions">
+              <button type="submit" className="submit-btn" disabled={loading}>
+                {loading ? "Processing..." : "Analyze Resumes"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <Results
+              results={results.candidates}
+              totalResumes={results.total_resumes}
+              passedResumes={results.valid_candidates}
+              csvPath={results.csv_file_path}
+              onDownloadCSV={handleDownloadCSV}
+            />
+            <div className="form-actions">
+              <button onClick={handleReset} className="reset-btn">
+                Analyze More Resumes
+              </button>
+            </div>
+          </>
+        )}
+      </main>
+
+      <footer className="app-footer">
+        <p>Gulf Contractors - Resume Filtering System</p>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
