@@ -1,4 +1,6 @@
 __pycache__/
+requests/
+test_upload.sh
 *.py[cod]
 *$py.class
 *.so
