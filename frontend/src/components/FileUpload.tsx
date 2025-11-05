@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from "react";
 
 interface FileUploadProps {
   onFilesSelected: (files: File[]) => void;
@@ -7,11 +7,11 @@ interface FileUploadProps {
   files?: File[];
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ 
-  onFilesSelected, 
-  accept = '.pdf,.docx',
+const FileUpload: React.FC<FileUploadProps> = ({
+  onFilesSelected,
+  accept = ".pdf,.docx",
   multiple = true,
-  files = []
+  files = [],
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -22,16 +22,16 @@ const FileUpload: React.FC<FileUploadProps> = ({
     setSelectedFiles(files);
     // Also reset the file input element
     if (fileInputRef.current && files.length === 0) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   }, [files]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+    if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    } else if (e.type === "dragleave") {
       setDragActive(false);
     }
   };
@@ -40,7 +40,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const files = Array.from(e.dataTransfer.files);
       setSelectedFiles(files);
@@ -70,7 +70,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   return (
     <div className="file-upload-container">
       <div
-        className={`file-upload-area ${dragActive ? 'drag-active' : ''}`}
+        className={`file-upload-area ${dragActive ? "drag-active" : ""}`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
@@ -83,15 +83,13 @@ const FileUpload: React.FC<FileUploadProps> = ({
           multiple={multiple}
           accept={accept}
           onChange={handleChange}
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
         />
         <div className="upload-icon">📄</div>
         <p className="upload-text">
           Drag and drop resume files here, or click to browse
         </p>
-        <p className="upload-hint">
-          Supported formats: PDF, DOCX
-        </p>
+        <p className="upload-hint">Supported formats: PDF, DOCX</p>
       </div>
 
       {selectedFiles.length > 0 && (

@@ -1,5 +1,5 @@
-import React from 'react';
-import type { ResumeAnalysis } from '../types';
+import React from "react";
+import type { ResumeAnalysis } from "../types";
 
 interface ResultsProps {
   results: ResumeAnalysis[];
@@ -32,7 +32,10 @@ const Results: React.FC<ResultsProps> = ({
           <div className="summary-stat">
             <span className="stat-label">Pass Rate:</span>
             <span className="stat-value">
-              {totalResumes > 0 ? ((passedResumes / totalResumes) * 100).toFixed(1) : 0}%
+              {totalResumes > 0
+                ? ((passedResumes / totalResumes) * 100).toFixed(1)
+                : 0}
+              %
             </span>
           </div>
         </div>
@@ -50,7 +53,9 @@ const Results: React.FC<ResultsProps> = ({
               <h3 className="result-filename">{result.filename}</h3>
               <div className="result-score">
                 <span className="score-label">Score:</span>
-                <span className={`score-value ${result.score >= 70 ? 'high' : result.score >= 40 ? 'medium' : 'low'}`}>
+                <span
+                  className={`score-value ${result.score >= 70 ? "high" : result.score >= 40 ? "medium" : "low"}`}
+                >
                   {result.score}
                 </span>
               </div>

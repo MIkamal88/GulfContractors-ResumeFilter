@@ -69,4 +69,3 @@ export const downloadCSV = async (filePath: string): Promise<Blob> => {
 };
 
 export default api;
-

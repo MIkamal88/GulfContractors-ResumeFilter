@@ -5,15 +5,17 @@ import KeywordInput from "./components/KeywordInput";
 import Results from "./components/Results";
 import { filterResumes, downloadCSV } from "./services/api";
 import type { FilterResponse } from "./types";
+import logo from "./assets/logo.png";
 
 function App() {
   const [files, setFiles] = useState<File[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
-  const [minScore, setMinScore] = useState<number>(0);
+  const [minScore, setMinScore] = useState<string>("");
   const [generateAiSummary, setGenerateAiSummary] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [results, setResults] = useState<FilterResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
 
   const handleFilesSelected = (selectedFiles: File[]) => {
     setFiles(selectedFiles);
@@ -45,7 +47,7 @@ function App() {
       const response = await filterResumes(
         files,
         keywords,
-        minScore,
+        minScore === "" ? 0 : Number(minScore),
         generateAiSummary,
       );
 
@@ -74,7 +76,7 @@ function App() {
       // Reset form to landing page
       setFiles([]);
       setKeywords([]);
-      setMinScore(0);
+      setMinScore("");
       setGenerateAiSummary(true);
       setResults(null);
     } catch (err) {
@@ -111,20 +113,20 @@ function App() {
   const handleReset = () => {
     setFiles([]);
     setKeywords([]);
-    setMinScore(0);
+    setMinScore("");
     setGenerateAiSummary(true);
     setResults(null);
     setError(null);
   };
 
   return (
-    <div className="app">
+    <div className={`app ${darkMode ? "dark-mode" : ""}`}>
       <header className="app-header">
         <img
           className="app-logo"
           width="200"
           height="80"
-          src="https://gccld.com/wp-content/uploads/2024/05/gccld-logo.svg"
+          src={logo}
           alt="GCCLD Logo"
         />
         <div className="app-header-content">
@@ -134,6 +136,13 @@ function App() {
             summaries
           </p>
         </div>
+        <button
+          className="dark-mode-toggle"
+          onClick={() => setDarkMode(!darkMode)}
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? "☀️" : "🌙"}
+        </button>
       </header>
 
       <main className="app-main">
@@ -160,8 +169,9 @@ function App() {
                     min="0"
                     max="100"
                     value={minScore}
-                    onChange={(e) => setMinScore(Number(e.target.value))}
+                    onChange={(e) => setMinScore(e.target.value)}
                     className="score-input"
+                    placeholder="0"
                   />
                   <p className="input-hint">
                     Filter resumes with score above this threshold (0-100)
@@ -216,7 +226,7 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <p>Gulf Contractors - Resume Filtering System</p>
+        <p>© 2025 Gulf Contractors - Resume Filtering System</p>
       </footer>
     </div>
   );
