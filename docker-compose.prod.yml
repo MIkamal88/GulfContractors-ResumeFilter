@@ -10,12 +10,6 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - USE_OPENAI=${USE_OPENAI:-True}
       - MIN_KEYWORD_SCORE=${MIN_KEYWORD_SCORE:-50}
-      - CSV_OUTPUT_PATH=/app/output/filtered_resumes.csv
-      - RESUME_FOLDER_PATH=/app/resumes
-    volumes:
-      # Named volumes for production isolation and portability
-      - resume-data-output:/app/output
-      - resume-data-storage:/app/resumes
     restart: always
     networks:
       - resume-filter-network
@@ -52,9 +46,3 @@ services:
 networks:
   resume-filter-network:
     driver: bridge
-
-volumes:
-  resume-data-output:
-    driver: local
-  resume-data-storage:
-    driver: local

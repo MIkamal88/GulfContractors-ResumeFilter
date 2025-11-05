@@ -10,12 +10,6 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - USE_OPENAI=${USE_OPENAI:-True}
       - MIN_KEYWORD_SCORE=${MIN_KEYWORD_SCORE:-50}
-      - CSV_OUTPUT_PATH=/app/output/filtered_resumes.csv
-      - RESUME_FOLDER_PATH=/app/resumes
-    volumes:
-      # Bind mounts for easy development access
-      - ./output:/app/output
-      - ./resumes:/app/resumes
     restart: unless-stopped
     networks:
       - resume-filter-network

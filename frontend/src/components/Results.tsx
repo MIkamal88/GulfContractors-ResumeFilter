@@ -1,11 +1,11 @@
 import React from "react";
 import type { ResumeAnalysis } from "../types";
+import { openResume } from "../services/api";
 
 interface ResultsProps {
   results: ResumeAnalysis[];
   totalResumes: number;
   passedResumes: number;
-  csvPath?: string;
   onDownloadCSV?: () => void;
 }
 
@@ -13,9 +13,11 @@ const Results: React.FC<ResultsProps> = ({
   results,
   totalResumes,
   passedResumes,
-  csvPath,
   onDownloadCSV,
 }) => {
+  const handleOpenResume = (filename: string) => {
+    openResume(filename);
+  };
   return (
     <div className="results-container">
       <div className="results-header">
@@ -39,7 +41,7 @@ const Results: React.FC<ResultsProps> = ({
             </span>
           </div>
         </div>
-        {csvPath && onDownloadCSV && (
+        {results.length > 0 && onDownloadCSV && (
           <button className="download-btn" onClick={onDownloadCSV}>
             Download CSV Report
           </button>
@@ -50,7 +52,16 @@ const Results: React.FC<ResultsProps> = ({
         {results.map((result, index) => (
           <div key={index} className="result-card">
             <div className="result-header">
-              <h3 className="result-filename">{result.filename}</h3>
+              <div className="result-filename-section">
+                <h3 className="result-filename">{result.filename}</h3>
+                <button
+                  className="open-resume-btn"
+                  onClick={() => handleOpenResume(result.filename)}
+                  title="Open resume in new tab"
+                >
+                  📄 Open Resume
+                </button>
+              </div>
               <div className="result-score">
                 <span className="score-label">Score:</span>
                 <span
@@ -88,3 +99,8 @@ const Results: React.FC<ResultsProps> = ({
 };
 
 export default Results;
+
+
+
+
+

@@ -59,13 +59,23 @@ export const analyzeSingleResume = async (
   return response.data;
 };
 
-export const downloadCSV = async (filePath: string): Promise<Blob> => {
-  const response = await api.get("/download-csv", {
-    params: { file_path: filePath },
+export const downloadCSV = async (
+  candidates: FilterResponse["candidates"],
+): Promise<Blob> => {
+  const response = await api.post("/download-csv", candidates, {
+    headers: {
+      "Content-Type": "application/json",
+    },
     responseType: "blob",
   });
 
   return response.data;
 };
 
+export const openResume = (filename: string): void => {
+  const url = `${API_BASE_URL}/view-resume/${encodeURIComponent(filename)}`;
+  window.open(url, "_blank");
+};
+
 export default api;
+

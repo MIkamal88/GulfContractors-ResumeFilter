@@ -51,34 +51,8 @@ function App() {
         generateAiSummary,
       );
 
-      // Open CSV in new tab
-      if (
-        response.csv_file_path &&
-        !response.csv_file_path.includes("not generated")
-      ) {
-        try {
-          const blob = await downloadCSV(response.csv_file_path);
-          const url = window.URL.createObjectURL(blob);
-
-          // Open in new tab
-          window.open(url, "_blank");
-
-          // Clean up the URL object after a short delay
-          setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-        } catch (csvErr) {
-          console.error("Error opening CSV:", csvErr);
-          setError("Analysis completed but failed to open CSV file");
-        }
-      } else if (response.valid_candidates === 0) {
-        setError("No resumes passed the filter. No CSV generated.");
-      }
-
-      // Reset form to landing page
-      setFiles([]);
-      setKeywords([]);
-      setMinScore("");
-      setGenerateAiSummary(true);
-      setResults(null);
+      // Set results to show the Results page
+      setResults(response);
     } catch (err) {
       setError(
         err instanceof Error
@@ -92,10 +66,10 @@ function App() {
   };
 
   const handleDownloadCSV = async () => {
-    if (!results?.csv_file_path) return;
+    if (!results?.candidates || results.candidates.length === 0) return;
 
     try {
-      const blob = await downloadCSV(results.csv_file_path);
+      const blob = await downloadCSV(results.candidates);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -213,7 +187,6 @@ function App() {
               results={results.candidates}
               totalResumes={results.total_resumes}
               passedResumes={results.valid_candidates}
-              csvPath={results.csv_file_path}
               onDownloadCSV={handleDownloadCSV}
             />
             <div className="form-actions">

@@ -1,8 +1,9 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import FileResponse
-from typing import List
+from fastapi.responses import StreamingResponse, Response
+from typing import List, Dict
 import json
 from datetime import datetime
+import io
 
 from models import (
     ResumeAnalysis,
@@ -20,6 +21,9 @@ app = FastAPI(
     description="API for parsing, analyzing, and filtering resumes based on keywords with AI summaries",
     version="1.0.0"
 )
+
+# In-memory storage for uploaded resumes (filename -> file content)
+resume_storage: Dict[str, bytes] = {}
 
 
 @app.get("/", response_model=HealthResponse)
@@ -73,6 +77,9 @@ async def filter_resumes(
         try:
             # Read file content
             content = await file.read()
+            
+            # Store file content in memory for later retrieval
+            resume_storage[file.filename] = content
 
             # Parse resume
             text = ResumeParser.parse_resume(file.filename, content)
@@ -123,49 +130,89 @@ async def filter_resumes(
     elif generate_ai_summary and not settings.use_openai:
         print("OpenAI feature is disabled. Skipping AI summary generation.")
 
-    # Export to CSV
-    if valid_candidates:
-        csv_path = CSVExporter.create_timestamped_path(settings.csv_output_path)
-        CSVExporter.export_to_csv(
-            valid_candidates, 
-            csv_path,
-            resume_folder_path=settings.resume_folder_path
-        )
-    else:
-        csv_path = "No valid candidates found - CSV not generated"
+    # Generate timestamp for CSV identification
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_filename = f"filtered_resumes_{timestamp}.csv"
 
     return FilterResponse(
         total_resumes=len(all_analyses),
         valid_candidates=len(valid_candidates),
         rejected_candidates=len(all_analyses) - len(valid_candidates),
-        csv_file_path=csv_path,
+        csv_file_path=csv_filename if valid_candidates else "No valid candidates found - CSV not generated",
         candidates=valid_candidates
     )
 
 
-@app.get("/download-csv")
-async def download_csv(file_path: str):
+@app.post("/download-csv")
+async def download_csv(candidates: List[ResumeAnalysis]):
     """
-    Download a generated CSV file
+    Generate and download CSV from candidate data
 
     Args:
-        file_path: Path to the CSV file to download
+        candidates: List of ResumeAnalysis objects to export
 
     Returns:
-        FileResponse with the CSV file
+        StreamingResponse with the CSV file
+    """
+    if not candidates:
+        raise HTTPException(
+            status_code=400,
+            detail="No candidates provided for CSV generation"
+        )
+
+    # Generate CSV content in memory
+    csv_buffer = CSVExporter.export_to_csv_buffer(candidates)
+    
+    # Generate filename with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"filtered_resumes_{timestamp}.csv"
+
+    return StreamingResponse(
+        iter([csv_buffer.getvalue()]),
+        media_type='text/csv',
+        headers={
+            'Content-Disposition': f'attachment; filename="{filename}"'
+        }
+    )
+
+
+@app.get("/view-resume/{filename}")
+async def view_resume(filename: str):
+    """
+    Serve a resume file for viewing from in-memory storage
+
+    Args:
+        filename: Name of the resume file to view
+
+    Returns:
+        Response with the file content
     """
     import os
 
-    if not os.path.exists(file_path):
+    # Get file from in-memory storage
+    if filename not in resume_storage:
         raise HTTPException(
             status_code=404,
-            detail="CSV file not found"
+            detail="Resume file not found. File may have been cleared from memory."
         )
 
-    return FileResponse(
-        path=file_path,
-        media_type='text/csv',
-        filename=os.path.basename(file_path)
+    file_content = resume_storage[filename]
+
+    # Determine the media type based on file extension
+    file_extension = os.path.splitext(filename)[1].lower()
+    if file_extension == '.pdf':
+        media_type = 'application/pdf'
+    elif file_extension in ['.doc', '.docx']:
+        media_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    else:
+        media_type = 'application/octet-stream'
+
+    return Response(
+        content=file_content,
+        media_type=media_type,
+        headers={
+            'Content-Disposition': f'inline; filename="{filename}"'
+        }
     )
 
 
@@ -239,6 +286,10 @@ async def analyze_single_resume(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
 
 
 
