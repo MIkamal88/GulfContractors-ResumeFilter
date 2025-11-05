@@ -4,9 +4,10 @@ FROM python:3.13-slim
 # Set working directory in container
 WORKDIR /app
 
-# Install system dependencies for PDF and DOCX parsing
+# Install system dependencies for PDF and DOCX parsing, plus curl for health checks
 RUN apt-get update && apt-get install -y \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
