@@ -22,11 +22,8 @@ def analyze_single_resume(resume_path, keywords):
     """
     url = "http://localhost:8000/analyze-single"
 
-    files = {'file': open(resume_path, 'rb')}
-    data = {
-        'keywords': json.dumps(keywords),
-        'generate_ai_summary': True
-    }
+    files = {"file": open(resume_path, "rb")}
+    data = {"keywords": json.dumps(keywords), "generate_ai_summary": True}
 
     response = requests.post(url, files=files, data=data)
 
@@ -54,11 +51,11 @@ def filter_multiple_resumes(resume_paths, keywords, min_score=50):
     """
     url = "http://localhost:8000/filter-resumes"
 
-    files = [('files', open(path, 'rb')) for path in resume_paths]
+    files = [("files", open(path, "rb")) for path in resume_paths]
     data = {
-        'keywords': json.dumps(keywords),
-        'min_score': min_score,
-        'generate_ai_summary': True
+        "keywords": json.dumps(keywords),
+        "min_score": min_score,
+        "generate_ai_summary": True,
     }
 
     response = requests.post(url, files=files, data=data)
@@ -72,7 +69,7 @@ def filter_multiple_resumes(resume_paths, keywords, min_score=50):
         print(f"CSV File: {result['csv_file_path']}")
 
         print("\n=== Valid Candidates ===")
-        for candidate in result['candidates']:
+        for candidate in result["candidates"]:
             print(f"\n- {candidate['filename']} (Score: {candidate['score']}%)")
             print(f"  Keywords: {', '.join(candidate['keywords_found'])}")
             print(f"  Summary: {candidate['ai_summary'][:100]}...")
@@ -100,7 +97,7 @@ if __name__ == "__main__":
         "AWS",
         "Machine Learning",
         "REST API",
-        "Git"
+        "Git",
     ]
 
     # Example 1: Analyze a single resume

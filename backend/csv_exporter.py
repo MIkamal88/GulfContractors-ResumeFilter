@@ -45,7 +45,3 @@ class CSVExporter:
         csv_buffer.seek(0)
 
         return csv_buffer
-
-
-
-

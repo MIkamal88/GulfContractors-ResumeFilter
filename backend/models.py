@@ -5,12 +5,10 @@ from datetime import datetime
 
 class KeywordConfig(BaseModel):
     required_keywords: List[str] = Field(
-        ...,
-        description="List of keywords to search for in resumes"
+        ..., description="List of keywords to search for in resumes"
     )
     min_score: Optional[int] = Field(
-        None,
-        description="Minimum score threshold for filtering candidates"
+        None, description="Minimum score threshold for filtering candidates"
     )
 
 
@@ -35,3 +33,20 @@ class FilterResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     message: str
+
+
+class JobProfile(BaseModel):
+    """Represents a job profile with associated keywords."""
+
+    id: str
+    name: str
+    description: str
+    keywords: List[str]
+    category: str
+
+
+class JobProfilesResponse(BaseModel):
+    """Response containing list of job profiles."""
+
+    profiles: List[JobProfile]
+    categories: List[str]

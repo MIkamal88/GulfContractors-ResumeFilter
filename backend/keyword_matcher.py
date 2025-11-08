@@ -19,14 +19,11 @@ class KeywordMatcher:
             Normalized text (lowercase, extra spaces removed)
         """
         text = text.lower()
-        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r"\s+", " ", text)
         return text.strip()
 
     @staticmethod
-    def find_keywords(
-        text: str,
-        keywords: List[str]
-    ) -> Tuple[List[str], List[str]]:
+    def find_keywords(text: str, keywords: List[str]) -> Tuple[List[str], List[str]]:
         """
         Find which keywords are present in the text
 
@@ -45,7 +42,7 @@ class KeywordMatcher:
             normalized_keyword = KeywordMatcher.normalize_text(keyword)
 
             # Check for whole word match or phrase match
-            pattern = r'\b' + re.escape(normalized_keyword) + r'\b'
+            pattern = r"\b" + re.escape(normalized_keyword) + r"\b"
             if re.search(pattern, normalized_text):
                 found.append(keyword)
             else:
@@ -54,10 +51,7 @@ class KeywordMatcher:
         return found, missing
 
     @staticmethod
-    def calculate_score(
-        found_keywords: List[str],
-        total_keywords: int
-    ) -> int:
+    def calculate_score(found_keywords: List[str], total_keywords: int) -> int:
         """
         Calculate percentage score based on keywords found
 
@@ -76,8 +70,7 @@ class KeywordMatcher:
 
     @staticmethod
     def analyze_resume(
-        text: str,
-        keywords: List[str]
+        text: str, keywords: List[str]
     ) -> Tuple[List[str], List[str], int]:
         """
         Complete analysis of resume against keywords

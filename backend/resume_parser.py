@@ -71,11 +71,9 @@ class ResumeParser:
         """
         filename_lower = filename.lower()
 
-        if filename_lower.endswith('.pdf'):
+        if filename_lower.endswith(".pdf"):
             return ResumeParser.parse_pdf(file_content)
-        elif filename_lower.endswith('.docx'):
+        elif filename_lower.endswith(".docx"):
             return ResumeParser.parse_docx(file_content)
         else:
-            raise ValueError(
-                "Unsupported file format. Supported formats: PDF, DOCX"
-            )
+            raise ValueError("Unsupported file format. Supported formats: PDF, DOCX")

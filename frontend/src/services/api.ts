@@ -1,5 +1,10 @@
 import axios from "axios";
-import type { FilterResponse, SingleAnalysisResponse } from "../types";
+import type {
+  FilterResponse,
+  SingleAnalysisResponse,
+  JobProfilesResponse,
+  JobProfile,
+} from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
@@ -77,5 +82,58 @@ export const openResume = (filename: string): void => {
   window.open(url, "_blank");
 };
 
-export default api;
+// Job Profiles API
+export const getJobProfiles = async (): Promise<JobProfilesResponse> => {
+  const response = await api.get<JobProfilesResponse>("/job-profiles", {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+};
 
+export const getJobProfile = async (profileId: string): Promise<JobProfile> => {
+  const response = await api.get<JobProfile>(`/job-profiles/${profileId}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+};
+
+export const createCustomProfile = async (
+  profile: JobProfile,
+): Promise<JobProfile> => {
+  const response = await api.post<JobProfile>("/job-profiles", profile, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+};
+
+export const updateCustomProfile = async (
+  profileId: string,
+  profile: JobProfile,
+): Promise<JobProfile> => {
+  const response = await api.put<JobProfile>(
+    `/job-profiles/${profileId}`,
+    profile,
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+  return response.data;
+};
+
+export const deleteCustomProfile = async (profileId: string): Promise<void> => {
+  await api.delete(`/job-profiles/${profileId}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+};
+
+export default api;

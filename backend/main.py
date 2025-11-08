@@ -1,15 +1,18 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 from typing import List, Dict
 import json
 from datetime import datetime
-import io
 
 from models import (
     ResumeAnalysis,
     FilterResponse,
-    HealthResponse
+    HealthResponse,
+    JobProfile,
+    JobProfilesResponse,
 )
+from job_profiles_manager import JobProfilesManager
 from resume_parser import ResumeParser
 from keyword_matcher import KeywordMatcher
 from openai_service import OpenAIService
@@ -19,11 +22,23 @@ from config import settings
 app = FastAPI(
     title="Resume Filter API",
     description="API for parsing, analyzing, and filtering resumes based on keywords with AI summaries",
-    version="1.0.0"
+    version="1.0.0",
+)
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # In-memory storage for uploaded resumes (filename -> file content)
 resume_storage: Dict[str, bytes] = {}
+
+# Initialize job profiles manager with file persistence
+profiles_manager = JobProfilesManager(storage_file="data/custom_profiles.json")
 
 
 @app.get("/", response_model=HealthResponse)
@@ -31,10 +46,7 @@ async def root():
     """
     Health check endpoint
     """
-    return HealthResponse(
-        status="healthy",
-        message="Resume Filter API is running"
-    )
+    return HealthResponse(status="healthy", message="Resume Filter API is running")
 
 
 @app.post("/filter-resumes", response_model=FilterResponse)
@@ -42,7 +54,9 @@ async def filter_resumes(
     files: List[UploadFile] = File(..., description="Resume files (PDF or DOCX)"),
     keywords: str = Form(..., description="JSON array of keywords to search for"),
     min_score: int = Form(None, description="Minimum score threshold (0-100)"),
-    generate_ai_summary: bool = Form(True, description="Generate AI summaries using OpenAI")
+    generate_ai_summary: bool = Form(
+        True, description="Generate AI summaries using OpenAI"
+    ),
 ):
     """
     Upload multiple resumes, filter by keywords, and export valid candidates to CSV
@@ -64,7 +78,7 @@ async def filter_resumes(
     except Exception as e:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid keywords format. Expected JSON array: {str(e)}"
+            detail=f"Invalid keywords format. Expected JSON array: {str(e)}",
         )
 
     # Use provided min_score or fall back to config
@@ -77,7 +91,7 @@ async def filter_resumes(
         try:
             # Read file content
             content = await file.read()
-            
+
             # Store file content in memory for later retrieval
             resume_storage[file.filename] = content
 
@@ -85,10 +99,7 @@ async def filter_resumes(
             text = ResumeParser.parse_resume(file.filename, content)
 
             # Analyze keywords
-            found, missing, score = KeywordMatcher.analyze_resume(
-                text,
-                keyword_list
-            )
+            found, missing, score = KeywordMatcher.analyze_resume(text, keyword_list)
 
             # Create analysis object
             analysis = ResumeAnalysis(
@@ -97,7 +108,7 @@ async def filter_resumes(
                 keywords_found=found,
                 keywords_missing=missing,
                 score=score,
-                parsed_at=datetime.now()
+                parsed_at=datetime.now(),
             )
 
             all_analyses.append(analysis)
@@ -109,8 +120,7 @@ async def filter_resumes(
 
     # Filter valid candidates
     valid_candidates = [
-        analysis for analysis in all_analyses
-        if analysis.score >= threshold
+        analysis for analysis in all_analyses if analysis.score >= threshold
     ]
 
     # Generate AI summaries for valid candidates if requested
@@ -122,7 +132,7 @@ async def filter_resumes(
                     candidate.text_content,
                     candidate.keywords_found,
                     candidate.keywords_missing,
-                    candidate.score
+                    candidate.score,
                 )
         except Exception as e:
             print(f"Error generating AI summaries: {str(e)}")
@@ -138,8 +148,10 @@ async def filter_resumes(
         total_resumes=len(all_analyses),
         valid_candidates=len(valid_candidates),
         rejected_candidates=len(all_analyses) - len(valid_candidates),
-        csv_file_path=csv_filename if valid_candidates else "No valid candidates found - CSV not generated",
-        candidates=valid_candidates
+        csv_file_path=csv_filename
+        if valid_candidates
+        else "No valid candidates found - CSV not generated",
+        candidates=valid_candidates,
     )
 
 
@@ -156,23 +168,20 @@ async def download_csv(candidates: List[ResumeAnalysis]):
     """
     if not candidates:
         raise HTTPException(
-            status_code=400,
-            detail="No candidates provided for CSV generation"
+            status_code=400, detail="No candidates provided for CSV generation"
         )
 
     # Generate CSV content in memory
     csv_buffer = CSVExporter.export_to_csv_buffer(candidates)
-    
+
     # Generate filename with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"filtered_resumes_{timestamp}.csv"
 
     return StreamingResponse(
         iter([csv_buffer.getvalue()]),
-        media_type='text/csv',
-        headers={
-            'Content-Disposition': f'attachment; filename="{filename}"'
-        }
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
@@ -193,26 +202,26 @@ async def view_resume(filename: str):
     if filename not in resume_storage:
         raise HTTPException(
             status_code=404,
-            detail="Resume file not found. File may have been cleared from memory."
+            detail="Resume file not found. File may have been cleared from memory.",
         )
 
     file_content = resume_storage[filename]
 
     # Determine the media type based on file extension
     file_extension = os.path.splitext(filename)[1].lower()
-    if file_extension == '.pdf':
-        media_type = 'application/pdf'
-    elif file_extension in ['.doc', '.docx']:
-        media_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    if file_extension == ".pdf":
+        media_type = "application/pdf"
+    elif file_extension in [".doc", ".docx"]:
+        media_type = (
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
     else:
-        media_type = 'application/octet-stream'
+        media_type = "application/octet-stream"
 
     return Response(
         content=file_content,
         media_type=media_type,
-        headers={
-            'Content-Disposition': f'inline; filename="{filename}"'
-        }
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
     )
 
 
@@ -220,7 +229,9 @@ async def view_resume(filename: str):
 async def analyze_single_resume(
     file: UploadFile = File(..., description="Resume file (PDF or DOCX)"),
     keywords: str = Form(..., description="JSON array of keywords to search for"),
-    generate_ai_summary: bool = Form(True, description="Generate AI summary using OpenAI")
+    generate_ai_summary: bool = Form(
+        True, description="Generate AI summary using OpenAI"
+    ),
 ):
     """
     Analyze a single resume without filtering or CSV export
@@ -241,7 +252,7 @@ async def analyze_single_resume(
     except Exception as e:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid keywords format. Expected JSON array: {str(e)}"
+            detail=f"Invalid keywords format. Expected JSON array: {str(e)}",
         )
 
     try:
@@ -259,17 +270,14 @@ async def analyze_single_resume(
             keywords_found=found,
             keywords_missing=missing,
             score=score,
-            parsed_at=datetime.now()
+            parsed_at=datetime.now(),
         )
 
         # Generate AI summary if requested
         if generate_ai_summary and settings.use_openai:
             openai_service = OpenAIService()
             analysis.ai_summary = openai_service.generate_resume_summary(
-                text,
-                found,
-                missing,
-                score
+                text, found, missing, score
             )
         elif generate_ai_summary and not settings.use_openai:
             analysis.ai_summary = "OpenAI feature is disabled"
@@ -277,19 +285,117 @@ async def analyze_single_resume(
         return analysis
 
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error analyzing resume: {str(e)}")
+
+
+@app.get("/job-profiles", response_model=JobProfilesResponse)
+async def get_job_profiles():
+    """
+    Get all available job profiles (default + custom)
+
+    Returns:
+        JobProfilesResponse with list of profiles and categories
+    """
+    all_profiles = profiles_manager.get_all_profiles()
+    categories = profiles_manager.get_categories()
+
+    return JobProfilesResponse(profiles=all_profiles, categories=categories)
+
+
+@app.get("/job-profiles/{profile_id}", response_model=JobProfile)
+async def get_job_profile(profile_id: str):
+    """
+    Get a specific job profile by ID
+
+    Args:
+        profile_id: The ID of the job profile
+
+    Returns:
+        JobProfile object
+    """
+    profile = profiles_manager.get_profile_by_id(profile_id)
+
+    if profile is None:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error analyzing resume: {str(e)}"
+            status_code=404, detail=f"Job profile '{profile_id}' not found"
         )
+
+    return profile
+
+
+@app.post("/job-profiles", response_model=JobProfile)
+async def create_custom_profile(profile: JobProfile):
+    """
+    Create a custom job profile (persisted to file)
+
+    Args:
+        profile: JobProfile object to create
+
+    Returns:
+        The created JobProfile
+    """
+    try:
+        return profiles_manager.add_custom_profile(profile)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating profile: {str(e)}")
+
+
+@app.put("/job-profiles/{profile_id}", response_model=JobProfile)
+async def update_custom_profile(profile_id: str, profile: JobProfile):
+    """
+    Update a custom job profile (only custom profiles can be updated)
+
+    Args:
+        profile_id: The ID of the profile to update
+        profile: Updated JobProfile object
+
+    Returns:
+        The updated JobProfile
+    """
+    try:
+        updated_profile = profiles_manager.update_custom_profile(profile_id, profile)
+
+        if updated_profile is None:
+            raise HTTPException(
+                status_code=404, detail=f"Custom profile '{profile_id}' not found"
+            )
+
+        return updated_profile
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating profile: {str(e)}")
+
+
+@app.delete("/job-profiles/{profile_id}")
+async def delete_custom_profile(profile_id: str):
+    """
+    Delete a custom job profile (only custom profiles can be deleted)
+
+    Args:
+        profile_id: The ID of the profile to delete
+
+    Returns:
+        Success message
+    """
+    try:
+        success = profiles_manager.delete_custom_profile(profile_id)
+
+        if not success:
+            raise HTTPException(
+                status_code=404, detail=f"Custom profile '{profile_id}' not found"
+            )
+
+        return {"message": f"Profile '{profile_id}' deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting profile: {str(e)}")
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-
-
-
-
-

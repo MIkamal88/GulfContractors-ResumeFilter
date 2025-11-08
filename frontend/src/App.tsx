@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./App.css";
 import FileUpload from "./components/FileUpload";
 import KeywordInput from "./components/KeywordInput";
+import JobProfileSelector from "./components/JobProfileSelector";
 import Results from "./components/Results";
 import { filterResumes, downloadCSV } from "./services/api";
 import type { FilterResponse } from "./types";
@@ -24,6 +25,11 @@ function App() {
 
   const handleKeywordsChange = (newKeywords: string[]) => {
     setKeywords(newKeywords);
+  };
+
+  const handleProfileSelect = (profileKeywords: string[]) => {
+    setKeywords(profileKeywords);
+    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,6 +130,13 @@ function App() {
           <form onSubmit={handleSubmit} className="upload-form">
             <div className="form-section">
               <FileUpload onFilesSelected={handleFilesSelected} files={files} />
+            </div>
+
+            <div className="form-section">
+              <JobProfileSelector
+                onProfileSelect={handleProfileSelect}
+                onError={setError}
+              />
             </div>
 
             <div className="form-section">

@@ -10,15 +10,13 @@ class OpenAIService:
 
     def __init__(self):
         if not settings.openai_api_key:
-            raise ValueError("OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file.")
+            raise ValueError(
+                "OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file."
+            )
         self.client = OpenAI(api_key=settings.openai_api_key)
 
     def generate_resume_summary(
-        self,
-        resume_text: str,
-        keywords_found: list,
-        keywords_missing: list,
-        score: int
+        self, resume_text: str, keywords_found: list, keywords_missing: list, score: int
     ) -> str:
         """
         Generate an AI summary of the resume
@@ -42,8 +40,8 @@ Resume Content:
 
 Keyword Analysis:
 - Match Score: {score}%
-- Keywords Found: {', '.join(keywords_found) if keywords_found else 'None'}
-- Keywords Missing: {', '.join(keywords_missing) if keywords_missing else 'None'}
+- Keywords Found: {", ".join(keywords_found) if keywords_found else "None"}
+- Keywords Missing: {", ".join(keywords_missing) if keywords_missing else "None"}
 
 Please provide a concise professional summary (3-4 sentences) that includes:
 1. The candidate's primary skills and experience
@@ -58,15 +56,12 @@ Keep the summary professional and objective.
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert technical recruiter who provides concise, objective candidate assessments."
+                        "content": "You are an expert technical recruiter who provides concise, objective candidate assessments.",
                     },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
+                    {"role": "user", "content": prompt},
                 ],
                 max_completion_tokens=200,
-                temperature=0.7
+                temperature=0.7,
             )
 
             return response.choices[0].message.content.strip()
@@ -74,10 +69,7 @@ Keep the summary professional and objective.
         except Exception as e:
             return f"Error generating AI summary: {str(e)}"
 
-    def generate_batch_summaries(
-        self,
-        resumes: list
-    ) -> list:
+    def generate_batch_summaries(self, resumes: list) -> list:
         """
         Generate summaries for multiple resumes
 
@@ -88,13 +80,11 @@ Keep the summary professional and objective.
             List of resumes with AI summaries added
         """
         for resume in resumes:
-            resume['ai_summary'] = self.generate_resume_summary(
-                resume['text_content'],
-                resume['keywords_found'],
-                resume['keywords_missing'],
-                resume['score']
+            resume["ai_summary"] = self.generate_resume_summary(
+                resume["text_content"],
+                resume["keywords_found"],
+                resume["keywords_missing"],
+                resume["score"],
             )
 
         return resumes
-
-

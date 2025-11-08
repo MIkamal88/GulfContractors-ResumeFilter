@@ -99,8 +99,3 @@ const Results: React.FC<ResultsProps> = ({
 };
 
 export default Results;
-
-
-
-
-

@@ -22,3 +22,16 @@ export interface SingleAnalysisResponse {
   matched_keywords: string[];
   ai_summary?: string;
 }
+
+export interface JobProfile {
+  id: string;
+  name: string;
+  description: string;
+  keywords: string[];
+  category: string;
+}
+
+export interface JobProfilesResponse {
+  profiles: JobProfile[];
+  categories: string[];
+}
