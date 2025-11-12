@@ -17,3 +17,15 @@ uploads/
 *.pdf
 *.docx
 .DS_Store
+
+# Build outputs
+frontend/dist/
+frontend/node_modules/
+backend/__pycache__/
+
+# Apache generated config
+apache-config-deployed.conf
+gc-resumefilter-backend.service
+
+# Logs
+*.log
