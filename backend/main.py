@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 from typing import List, Dict
@@ -34,6 +34,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Create API router with /api prefix
+api_router = APIRouter(prefix="/api")
+
 # In-memory storage for uploaded resumes (filename -> file content)
 resume_storage: Dict[str, bytes] = {}
 
@@ -41,7 +44,7 @@ resume_storage: Dict[str, bytes] = {}
 profiles_manager = JobProfilesManager(storage_file="data/custom_profiles.json")
 
 
-@app.get("/", response_model=HealthResponse)
+@api_router.get("/", response_model=HealthResponse)
 async def root():
     """
     Health check endpoint
@@ -49,7 +52,7 @@ async def root():
     return HealthResponse(status="healthy", message="Resume Filter API is running")
 
 
-@app.post("/filter-resumes", response_model=FilterResponse)
+@api_router.post("/filter-resumes", response_model=FilterResponse)
 async def filter_resumes(
     files: List[UploadFile] = File(..., description="Resume files (PDF or DOCX)"),
     keywords: str = Form(..., description="JSON array of keywords to search for"),
@@ -155,7 +158,7 @@ async def filter_resumes(
     )
 
 
-@app.post("/download-csv")
+@api_router.post("/download-csv")
 async def download_csv(candidates: List[ResumeAnalysis]):
     """
     Generate and download CSV from candidate data
@@ -185,7 +188,7 @@ async def download_csv(candidates: List[ResumeAnalysis]):
     )
 
 
-@app.get("/view-resume/{filename}")
+@api_router.get("/view-resume/{filename}")
 async def view_resume(filename: str):
     """
     Serve a resume file for viewing from in-memory storage
@@ -225,7 +228,7 @@ async def view_resume(filename: str):
     )
 
 
-@app.post("/analyze-single", response_model=ResumeAnalysis)
+@api_router.post("/analyze-single", response_model=ResumeAnalysis)
 async def analyze_single_resume(
     file: UploadFile = File(..., description="Resume file (PDF or DOCX)"),
     keywords: str = Form(..., description="JSON array of keywords to search for"),
@@ -288,7 +291,7 @@ async def analyze_single_resume(
         raise HTTPException(status_code=500, detail=f"Error analyzing resume: {str(e)}")
 
 
-@app.get("/job-profiles", response_model=JobProfilesResponse)
+@api_router.get("/job-profiles", response_model=JobProfilesResponse)
 async def get_job_profiles():
     """
     Get all available job profiles (default + custom)
@@ -302,7 +305,7 @@ async def get_job_profiles():
     return JobProfilesResponse(profiles=all_profiles, categories=categories)
 
 
-@app.get("/job-profiles/{profile_id}", response_model=JobProfile)
+@api_router.get("/job-profiles/{profile_id}", response_model=JobProfile)
 async def get_job_profile(profile_id: str):
     """
     Get a specific job profile by ID
@@ -323,7 +326,7 @@ async def get_job_profile(profile_id: str):
     return profile
 
 
-@app.post("/job-profiles", response_model=JobProfile)
+@api_router.post("/job-profiles", response_model=JobProfile)
 async def create_custom_profile(profile: JobProfile):
     """
     Create a custom job profile (persisted to file)
@@ -342,7 +345,7 @@ async def create_custom_profile(profile: JobProfile):
         raise HTTPException(status_code=500, detail=f"Error creating profile: {str(e)}")
 
 
-@app.put("/job-profiles/{profile_id}", response_model=JobProfile)
+@api_router.put("/job-profiles/{profile_id}", response_model=JobProfile)
 async def update_custom_profile(profile_id: str, profile: JobProfile):
     """
     Update a custom job profile (only custom profiles can be updated)
@@ -369,7 +372,7 @@ async def update_custom_profile(profile_id: str, profile: JobProfile):
         raise HTTPException(status_code=500, detail=f"Error updating profile: {str(e)}")
 
 
-@app.delete("/job-profiles/{profile_id}")
+@api_router.delete("/job-profiles/{profile_id}")
 async def delete_custom_profile(profile_id: str):
     """
     Delete a custom job profile (only custom profiles can be deleted)
@@ -395,7 +398,22 @@ async def delete_custom_profile(profile_id: str):
         raise HTTPException(status_code=500, detail=f"Error deleting profile: {str(e)}")
 
 
+# Include the API router in the app
+app.include_router(api_router)
+
+
 if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
+
+
+
+
+
+
+
