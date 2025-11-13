@@ -1,0 +1,56 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: resumefilter-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for hot-reload
+      - ./backend:/app
+      # Persist job profiles data
+      - ./backend/data:/app/data
+    environment:
+      - USE_OPENAI=${USE_OPENAI:-False}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - MIN_KEYWORD_SCORE=${MIN_KEYWORD_SCORE:-50}
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+    networks:
+      - resumefilter-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: resumefilter-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount source code for hot-reload
+      - ./frontend:/app
+      # Use named volume for node_modules to avoid conflicts
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=/api
+      - DOCKER_ENV=true
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - resumefilter-network
+
+networks:
+  resumefilter-network:
+    driver: bridge
+
+volumes:
+  backend_data:

@@ -42,18 +42,20 @@ const FileUpload: React.FC<FileUploadProps> = ({
     setDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const files = Array.from(e.dataTransfer.files);
-      setSelectedFiles(files);
-      onFilesSelected(files);
+      const newFiles = Array.from(e.dataTransfer.files);
+      const updatedFiles = [...selectedFiles, ...newFiles];
+      setSelectedFiles(updatedFiles);
+      onFilesSelected(updatedFiles);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     if (e.target.files && e.target.files.length > 0) {
-      const files = Array.from(e.target.files);
-      setSelectedFiles(files);
-      onFilesSelected(files);
+      const newFiles = Array.from(e.target.files);
+      const updatedFiles = [...selectedFiles, ...newFiles];
+      setSelectedFiles(updatedFiles);
+      onFilesSelected(updatedFiles);
     }
   };
 
@@ -121,3 +123,5 @@ const FileUpload: React.FC<FileUploadProps> = ({
 };
 
 export default FileUpload;
+
+

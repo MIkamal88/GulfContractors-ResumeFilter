@@ -6,9 +6,15 @@ export default defineConfig({
   plugins: [react()],
   base: "/resumefilter/",
   server: {
+    host: true, // Listen on all addresses for Docker
+    port: 5173,
+    strictPort: true,
+    watch: {
+      usePolling: true, // Enable polling for Docker file watching
+    },
     proxy: {
       "/api": {
-        target: "http://localhost:8000",
+        target: process.env.DOCKER_ENV === "true" ? "http://backend:8000" : "http://localhost:8000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
