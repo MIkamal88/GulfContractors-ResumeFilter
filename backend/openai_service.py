@@ -45,10 +45,11 @@ Keyword Analysis:
 
 Please provide a concise professional summary (3-4 sentences) that includes:
 1. The candidate's primary skills and experience
-2. Actual years of experience.
-3. Any notable strengths or gaps
+2. Actual years of experience, how much of those are in the UAE or Gulf Area.
+3. Analyze whether the user is located in the UAE or not using his last job location or if his phone number starts with +971.
+4. Any notable strengths or gaps
 
-Keep the summary professional and objective.
+Use bullet points Separate each point with a new line '\n', keep the summary professional and objective.
 """
 
             response = self.client.chat.completions.create(

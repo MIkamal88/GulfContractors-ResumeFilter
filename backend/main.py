@@ -126,6 +126,9 @@ async def filter_resumes(
         analysis for analysis in all_analyses if analysis.score >= threshold
     ]
 
+    # Sort valid candidates by score in descending order
+    valid_candidates.sort(key=lambda x: x.score, reverse=True)
+
     # Generate AI summaries for valid candidates if requested
     if generate_ai_summary and valid_candidates and settings.use_openai:
         try:
@@ -406,6 +409,7 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 

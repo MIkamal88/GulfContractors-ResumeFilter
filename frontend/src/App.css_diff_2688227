@@ -1,0 +1,38 @@
+.results-header {
+  margin-bottom: 2rem;
+}
+
+.results-header h2 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.job-profile-badge {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.export-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.pdf-btn {
+  background: #2196F3;
+  margin-left: 0;
+}
+
+.pdf-btn:hover {
+  background: #1976D2;
+}

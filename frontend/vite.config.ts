@@ -14,9 +14,12 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: process.env.DOCKER_ENV === "true" ? "http://backend:8000" : "http://localhost:8000",
+        target:
+          process.env.DOCKER_ENV === "true"
+            ? "http://backend:8000"
+            : "http://localhost:8000",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
+        // Removed rewrite - keep /api prefix when forwarding
       },
     },
   },

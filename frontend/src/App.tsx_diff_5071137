@@ -204,7 +204,6 @@ function App() {
               totalResumes={results.total_resumes}
               passedResumes={results.valid_candidates}
               onDownloadCSV={handleDownloadCSV}
-              jobProfileName={selectedJobProfileName}
             />
             <div className="form-actions">
               <button onClick={handleReset} className="reset-btn">
@@ -223,3 +222,4 @@ function App() {
 }
 
 export default App;
+

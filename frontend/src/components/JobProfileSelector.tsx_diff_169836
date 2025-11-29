@@ -1,0 +1,4 @@
+interface JobProfileSelectorProps {
+  onProfileSelect: (keywords: string[], profileName?: string) => void;
+  onError?: (error: string) => void;
+}
