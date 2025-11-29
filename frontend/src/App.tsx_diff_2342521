@@ -1,3 +1,0 @@
-  const [error, setError] = useState<string | null>(null);
-  const [darkMode, setDarkMode] = useState<boolean>(false);
-  const [selectedJobProfileName, setSelectedJobProfileName] = useState<string | null>(null);
