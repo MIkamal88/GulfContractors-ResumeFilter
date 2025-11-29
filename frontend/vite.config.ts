@@ -23,4 +23,16 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'pdf-vendor': ['html2pdf.js'],
+          'http-vendor': ['axios'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 500,
+  },
 });

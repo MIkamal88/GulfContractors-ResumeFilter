@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import "./App.css";
 import FileUpload from "./components/FileUpload";
 import KeywordInput from "./components/KeywordInput";
 import JobProfileSelector from "./components/JobProfileSelector";
-import Results from "./components/Results";
 import { filterResumes, downloadCSV } from "./services/api";
 import type { FilterResponse } from "./types";
 import logo from "./assets/logo.png";
+
+// Lazy load Results component since it's only needed after form submission
+// and includes the heavy html2pdf.js library
+const Results = lazy(() => import("./components/Results"));
 
 function App() {
   const [files, setFiles] = useState<File[]>([]);
@@ -198,7 +201,7 @@ function App() {
             </div>
           </form>
         ) : (
-          <>
+          <Suspense fallback={<div className="loading-message">Loading results...</div>}>
             <Results
               results={results.candidates}
               totalResumes={results.total_resumes}
@@ -211,7 +214,7 @@ function App() {
                 Analyze More Resumes
               </button>
             </div>
-          </>
+          </Suspense>
         )}
       </main>
 
