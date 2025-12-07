@@ -87,11 +87,19 @@ const FileUpload: React.FC<FileUploadProps> = ({
           onChange={handleChange}
           style={{ display: "none" }}
         />
-        <div className="upload-icon">📄</div>
+        <div className="upload-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6 }}>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="12" y2="12"/>
+            <line x1="15" y1="15" x2="12" y2="12"/>
+          </svg>
+        </div>
         <p className="upload-text">
-          Drag and drop resume files here, or click to browse
+          Drop resume files here or click to browse
         </p>
-        <p className="upload-hint">Supported formats: PDF, DOCX</p>
+        <p className="upload-hint">Accepts PDF and DOCX files</p>
       </div>
 
       {selectedFiles.length > 0 && (

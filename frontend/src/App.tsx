@@ -110,24 +110,38 @@ function App() {
       <header className="app-header">
         <img
           className="app-logo"
-          width="200"
-          height="80"
           src={logo}
           alt="GCCLD Logo"
         />
         <div className="app-header-content">
-          <h1>Gulf Contractors Resume Filter</h1>
+          <h1>Resume Filter</h1>
           <p className="app-subtitle">
-            Analyze and filter resumes based on keywords with AI-powered
-            summaries
+            Gulf Contractors LLC AI-powered resume filtering and analysis
           </p>
         </div>
         <button
           className="dark-mode-toggle"
           onClick={() => setDarkMode(!darkMode)}
           aria-label="Toggle dark mode"
+          title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
         >
-          {darkMode ? "☀️" : "🌙"}
+          {darkMode ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          )}
         </button>
       </header>
 
@@ -196,7 +210,29 @@ function App() {
 
             <div className="form-actions">
               <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? "Processing..." : "Analyze Resumes"}
+                {loading ? (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                      <line x1="12" y1="2" x2="12" y2="6"/>
+                      <line x1="12" y1="18" x2="12" y2="22"/>
+                      <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+                      <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                      <line x1="2" y1="12" x2="6" y2="12"/>
+                      <line x1="18" y1="12" x2="22" y2="12"/>
+                      <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+                      <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8"/>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    Analyze Resumes
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -211,6 +247,10 @@ function App() {
             />
             <div className="form-actions">
               <button onClick={handleReset} className="reset-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="1 4 1 10 7 10"/>
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                </svg>
                 Analyze More Resumes
               </button>
             </div>
