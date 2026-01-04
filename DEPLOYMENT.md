@@ -129,6 +129,13 @@ sudo systemctl disable gc-resumefilter-backend
 
 # Enable auto-start on boot
 sudo systemctl enable gc-resumefilter-backend
+
+# Backup Job Profiles
+```bash
+# Add to crontab
+sudo crontab -e
+# Add this line to backup job profiles weekly at 3 AM every Sunday:
+0 3 * * 0 cp -f /path/to/source/file.json /path/to/destination/
 ```
 
 ### Apache

@@ -5,7 +5,8 @@ import KeywordInput from "./components/KeywordInput";
 import JobProfileSelector from "./components/JobProfileSelector";
 import { filterResumes, downloadCSV } from "./services/api";
 import type { FilterResponse } from "./types";
-import logo from "./assets/logo.png";
+import logoLight from "./assets/gcclogo1.png";
+import logoDark from "./assets/gcclogo2.png";
 
 // Lazy load Results component since it's only needed after form submission
 // and includes the heavy html2pdf.js library
@@ -110,8 +111,8 @@ function App() {
       <header className="app-header">
         <img
           className="app-logo"
-          src={logo}
-          alt="GCCLD Logo"
+          src={darkMode ? logoDark : logoLight}
+          alt="Gulf Contractors Logo"
         />
         <div className="app-header-content">
           <h1>Resume Filter</h1>

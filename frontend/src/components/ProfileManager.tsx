@@ -26,7 +26,6 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    id: "",
     name: "",
     description: "",
     category: "",
@@ -53,7 +52,6 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
 
   const resetForm = () => {
     setFormData({
-      id: "",
       name: "",
       description: "",
       category: "",
@@ -98,7 +96,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     setSuccess(null);
 
     // Validation
-    if (!formData.id || !formData.name || !formData.category) {
+    if (!formData.name || !formData.category) {
       setError("Please fill in all required fields");
       return;
     }
@@ -112,7 +110,9 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
 
     try {
       const profile: JobProfile = {
-        id: formData.id,
+        id: isEditing && editingProfileId 
+          ? editingProfileId 
+          : `profile_${Date.now()}`,
         name: formData.name,
         description: formData.description,
         category: formData.category,
@@ -151,7 +151,6 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
 
   const handleEdit = (profile: JobProfile) => {
     setFormData({
-      id: profile.id,
       name: profile.name,
       description: profile.description,
       category: profile.category,
@@ -187,6 +186,39 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
           (err as { message?: string }).message ||
           "Failed to delete profile",
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDuplicate = async (profile: JobProfile) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const duplicatedProfile: JobProfile = {
+        id: `profile_${Date.now()}`,
+        name: `${profile.name} (Copy)`,
+        description: profile.description,
+        category: profile.category,
+        keywords: [...profile.keywords],
+      };
+
+      await createCustomProfile(duplicatedProfile);
+      setSuccess("Profile duplicated successfully!");
+      await loadProfiles();
+
+      if (onProfileCreated) {
+        onProfileCreated();
+      }
+    } catch (err) {
+      const errorMessage =
+        (err as { response?: { data?: { detail?: string } }; message?: string })
+          .response?.data?.detail ||
+        (err as { message?: string }).message ||
+        "Failed to duplicate profile";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -252,27 +284,6 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
             <h3>{isEditing ? "Edit Profile" : "Create New Profile"}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-row">
-                <div className="form-field">
-                  <label htmlFor="profile-id">
-                    Profile ID <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="profile-id"
-                    value={formData.id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, id: e.target.value })
-                    }
-                    placeholder="e.g., my_custom_profile"
-                    disabled={isEditing}
-                    required
-                  />
-                  <small>
-                    Use lowercase with underscores (cannot be changed after
-                    creation)
-                  </small>
-                </div>
-
                 <div className="form-field">
                   <label htmlFor="profile-name">
                     Profile Name <span className="required">*</span>
@@ -417,6 +428,17 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                         </span>
                       </div>
                       <div className="profile-actions">
+                        <button
+                          type="button"
+                          onClick={() => handleDuplicate(profile)}
+                          className="duplicate-btn"
+                          title="Duplicate profile"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                          </svg>
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleEdit(profile)}

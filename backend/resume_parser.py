@@ -1,6 +1,11 @@
 import PyPDF2
 import docx
 import io
+from typing import Tuple
+
+
+# Minimum character threshold to consider text extraction successful
+MIN_TEXT_LENGTH = 100
 
 
 class ResumeParser:
@@ -25,7 +30,9 @@ class ResumeParser:
 
             text = ""
             for page in pdf_reader.pages:
-                text += page.extract_text() + "\n"
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
 
             return text.strip()
         except Exception as e:
@@ -55,7 +62,7 @@ class ResumeParser:
             raise ValueError(f"Error parsing DOCX: {str(e)}")
 
     @staticmethod
-    def parse_resume(filename: str, file_content: bytes) -> str:
+    def parse_resume(filename: str, file_content: bytes) -> Tuple[str, bool]:
         """
         Parse resume based on file extension
 
@@ -64,7 +71,9 @@ class ResumeParser:
             file_content: Raw bytes of the file
 
         Returns:
-            Extracted text content
+            Tuple of (extracted text content, is_image_based flag)
+            is_image_based is True if the resume appears to be mostly images
+            (less than MIN_TEXT_LENGTH characters extracted)
 
         Raises:
             ValueError: If file format is not supported
@@ -72,8 +81,13 @@ class ResumeParser:
         filename_lower = filename.lower()
 
         if filename_lower.endswith(".pdf"):
-            return ResumeParser.parse_pdf(file_content)
+            text = ResumeParser.parse_pdf(file_content)
         elif filename_lower.endswith(".docx"):
-            return ResumeParser.parse_docx(file_content)
+            text = ResumeParser.parse_docx(file_content)
         else:
             raise ValueError("Unsupported file format. Supported formats: PDF, DOCX")
+
+        # Check if resume is image-based (too little text extracted)
+        is_image_based = len(text) < MIN_TEXT_LENGTH
+
+        return text, is_image_based

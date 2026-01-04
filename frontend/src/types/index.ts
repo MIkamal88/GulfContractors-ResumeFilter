@@ -5,6 +5,8 @@ export interface ResumeAnalysis {
   keywords_missing: string[];
   score: number;
   ai_summary?: string;
+  uae_presence?: boolean;
+  is_image_based: boolean;
   parsed_at: string;
 }
 

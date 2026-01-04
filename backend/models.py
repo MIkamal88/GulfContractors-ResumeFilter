@@ -19,6 +19,8 @@ class ResumeAnalysis(BaseModel):
     keywords_missing: List[str]
     score: int
     ai_summary: Optional[str] = None
+    uae_presence: Optional[bool] = None
+    is_image_based: bool = False
     parsed_at: datetime = Field(default_factory=datetime.now)
 
 

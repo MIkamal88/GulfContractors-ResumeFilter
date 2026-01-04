@@ -25,10 +25,15 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configure CORS
+# Configure CORS - parse origins from settings (comma-separated or *)
+cors_origins = (
+    ["*"]
+    if settings.cors_origins == "*"
+    else [origin.strip() for origin in settings.cors_origins.split(",")]
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,7 +46,7 @@ api_router = APIRouter(prefix="/api")
 resume_storage: Dict[str, bytes] = {}
 
 # Initialize job profiles manager with file persistence
-profiles_manager = JobProfilesManager(storage_file="data/custom_profiles.json")
+profiles_manager = JobProfilesManager(storage_file=settings.storage_json)
 
 
 @api_router.get("/", response_model=HealthResponse)
@@ -98,8 +103,8 @@ async def filter_resumes(
             # Store file content in memory for later retrieval
             resume_storage[file.filename] = content
 
-            # Parse resume
-            text = ResumeParser.parse_resume(file.filename, content)
+            # Parse resume (returns text and is_image_based flag)
+            text, is_image_based = ResumeParser.parse_resume(file.filename, content)
 
             # Analyze keywords
             found, missing, score = KeywordMatcher.analyze_resume(text, keyword_list)
@@ -111,6 +116,7 @@ async def filter_resumes(
                 keywords_found=found,
                 keywords_missing=missing,
                 score=score,
+                is_image_based=is_image_based,
                 parsed_at=datetime.now(),
             )
 
@@ -129,17 +135,23 @@ async def filter_resumes(
     # Sort valid candidates by score in descending order
     valid_candidates.sort(key=lambda x: x.score, reverse=True)
 
-    # Generate AI summaries for valid candidates if requested
+    # Generate AI summaries and detect UAE presence for valid candidates if requested
+    # Skip image-based resumes to save API usage
     if generate_ai_summary and valid_candidates and settings.use_openai:
         try:
             openai_service = OpenAIService()
             for candidate in valid_candidates:
-                candidate.ai_summary = openai_service.generate_resume_summary(
+                if candidate.is_image_based:
+                    # Skip AI processing for image-based resumes
+                    continue
+                result = openai_service.generate_resume_summary(
                     candidate.text_content,
                     candidate.keywords_found,
                     candidate.keywords_missing,
                     candidate.score,
                 )
+                candidate.ai_summary = result.get("summary")
+                candidate.uae_presence = result.get("uae_presence")
         except Exception as e:
             print(f"Error generating AI summaries: {str(e)}")
             # Continue without AI summaries
@@ -262,9 +274,9 @@ async def analyze_single_resume(
         )
 
     try:
-        # Read and parse resume
+        # Read and parse resume (returns text and is_image_based flag)
         content = await file.read()
-        text = ResumeParser.parse_resume(file.filename, content)
+        text, is_image_based = ResumeParser.parse_resume(file.filename, content)
 
         # Analyze keywords
         found, missing, score = KeywordMatcher.analyze_resume(text, keyword_list)
@@ -276,15 +288,17 @@ async def analyze_single_resume(
             keywords_found=found,
             keywords_missing=missing,
             score=score,
+            is_image_based=is_image_based,
             parsed_at=datetime.now(),
         )
 
-        # Generate AI summary if requested
-        if generate_ai_summary and settings.use_openai:
+        # Generate AI summary and detect UAE presence if requested
+        # Skip for image-based resumes to save API usage
+        if generate_ai_summary and settings.use_openai and not is_image_based:
             openai_service = OpenAIService()
-            analysis.ai_summary = openai_service.generate_resume_summary(
-                text, found, missing, score
-            )
+            result = openai_service.generate_resume_summary(text, found, missing, score)
+            analysis.ai_summary = result.get("summary")
+            analysis.uae_presence = result.get("uae_presence")
         elif generate_ai_summary and not settings.use_openai:
             analysis.ai_summary = "OpenAI feature is disabled"
 
@@ -409,15 +423,3 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-
-
-
-
-
-
-
-
-
-

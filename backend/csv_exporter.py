@@ -23,13 +23,30 @@ class CSVExporter:
         # Convert candidates to DataFrame
         data = []
         for candidate in candidates:
+            # Convert uae_presence to human-readable string
+            if candidate.uae_presence is None:
+                uae_status = "N/A"
+            elif candidate.uae_presence:
+                uae_status = "Yes"
+            else:
+                uae_status = "No"
+
+            # Handle image-based resumes
+            if candidate.is_image_based:
+                score_display = "N/A (Image-based)"
+                ai_summary = "Could not process - resume appears to be image-based"
+            else:
+                score_display = str(candidate.score)
+                ai_summary = candidate.ai_summary or "N/A"
+
             data.append(
                 {
                     "Filename": candidate.filename,
-                    "Score": candidate.score,
+                    "Score": score_display,
+                    "UAE Presence": uae_status,
                     "Keywords Found": ", ".join(candidate.keywords_found),
                     "Keywords Missing": ", ".join(candidate.keywords_missing),
-                    "AI Summary": candidate.ai_summary or "N/A",
+                    "AI Summary": ai_summary,
                     "Parsed At": candidate.parsed_at.strftime("%Y-%m-%d %H:%M:%S"),
                 }
             )
