@@ -41,7 +41,7 @@ class ResumeParser:
     @staticmethod
     def parse_docx(file_content: bytes) -> str:
         """
-        Extract text from DOCX file
+        Extract text from DOCX file including paragraphs, tables, headers, and footers
 
         Args:
             file_content: Raw bytes of the DOCX file
@@ -53,11 +53,44 @@ class ResumeParser:
             docx_file = io.BytesIO(file_content)
             doc = docx.Document(docx_file)
 
-            text = ""
-            for paragraph in doc.paragraphs:
-                text += paragraph.text + "\n"
+            text_parts = []
 
-            return text.strip()
+            # Extract from headers and footers (contact info often lives here)
+            for section in doc.sections:
+                # Header
+                if section.header:
+                    for paragraph in section.header.paragraphs:
+                        if paragraph.text.strip():
+                            text_parts.append(paragraph.text)
+                    for table in section.header.tables:
+                        for row in table.rows:
+                            for cell in row.cells:
+                                if cell.text.strip():
+                                    text_parts.append(cell.text)
+                # Footer
+                if section.footer:
+                    for paragraph in section.footer.paragraphs:
+                        if paragraph.text.strip():
+                            text_parts.append(paragraph.text)
+                    for table in section.footer.tables:
+                        for row in table.rows:
+                            for cell in row.cells:
+                                if cell.text.strip():
+                                    text_parts.append(cell.text)
+
+            # Extract from main document paragraphs
+            for paragraph in doc.paragraphs:
+                if paragraph.text.strip():
+                    text_parts.append(paragraph.text)
+
+            # Extract from tables (many resumes use tables for layout)
+            for table in doc.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        if cell.text.strip():
+                            text_parts.append(cell.text)
+
+            return "\n".join(text_parts).strip()
         except Exception as e:
             raise ValueError(f"Error parsing DOCX: {str(e)}")
 

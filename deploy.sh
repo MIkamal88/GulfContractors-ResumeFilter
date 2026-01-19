@@ -42,11 +42,18 @@ echo ""
 # Step 1: Install backend dependencies
 echo -e "${GREEN}[1/7] Installing backend dependencies...${NC}"
 cd "$SCRIPT_DIR/backend"
-if [ ! -d "venv" ]; then
-    echo "Creating Python virtual environment..."
-    python3 -m venv venv
+
+# Always recreate the virtual environment to avoid portability issues
+# (venvs contain hardcoded paths and are not portable between machines)
+if [ -d "venv" ]; then
+    echo "Removing existing virtual environment (venvs are not portable)..."
+    rm -rf venv
 fi
+echo "Creating Python virtual environment..."
+python3 -m venv venv
+
 source venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 deactivate
 echo ""
