@@ -44,6 +44,7 @@ class JobProfile(BaseModel):
     name: str
     description: str
     keywords: List[str]
+    double_weight_keywords: List[str] = []  # Keywords that count as 2x weight
     category: str
 
 

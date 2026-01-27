@@ -61,6 +61,9 @@ async def root():
 async def filter_resumes(
     files: List[UploadFile] = File(..., description="Resume files (PDF or DOCX)"),
     keywords: str = Form(..., description="JSON array of keywords to search for"),
+    double_weight_keywords: str = Form(
+        "[]", description="JSON array of keywords that count as 2x weight"
+    ),
     min_score: int = Form(None, description="Minimum score threshold (0-100)"),
     generate_ai_summary: bool = Form(
         True, description="Generate AI summaries using OpenAI"
@@ -89,6 +92,17 @@ async def filter_resumes(
             detail=f"Invalid keywords format. Expected JSON array: {str(e)}",
         )
 
+    # Parse double-weight keywords
+    try:
+        double_weight_list = json.loads(double_weight_keywords)
+        if not isinstance(double_weight_list, list):
+            raise ValueError("Double-weight keywords must be an array")
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid double_weight_keywords format. Expected JSON array: {str(e)}",
+        )
+
     # Use provided min_score or fall back to config
     threshold = min_score if min_score is not None else settings.min_keyword_score
 
@@ -106,8 +120,10 @@ async def filter_resumes(
             # Parse resume (returns text and is_image_based flag)
             text, is_image_based = ResumeParser.parse_resume(file.filename, content)
 
-            # Analyze keywords
-            found, missing, score = KeywordMatcher.analyze_resume(text, keyword_list)
+            # Analyze keywords with double-weight support
+            found, missing, score = KeywordMatcher.analyze_resume(
+                text, keyword_list, double_weight_list
+            )
 
             # Create analysis object
             analysis = ResumeAnalysis(
@@ -247,6 +263,9 @@ async def view_resume(filename: str):
 async def analyze_single_resume(
     file: UploadFile = File(..., description="Resume file (PDF or DOCX)"),
     keywords: str = Form(..., description="JSON array of keywords to search for"),
+    double_weight_keywords: str = Form(
+        "[]", description="JSON array of keywords that count as 2x weight"
+    ),
     generate_ai_summary: bool = Form(
         True, description="Generate AI summary using OpenAI"
     ),
@@ -257,6 +276,7 @@ async def analyze_single_resume(
     Args:
         file: Resume file (PDF or DOCX format)
         keywords: JSON string array of keywords to search for
+        double_weight_keywords: JSON array of keywords that count as 2x weight
         generate_ai_summary: Whether to generate AI summary (default: True)
 
     Returns:
@@ -273,13 +293,26 @@ async def analyze_single_resume(
             detail=f"Invalid keywords format. Expected JSON array: {str(e)}",
         )
 
+    # Parse double-weight keywords
+    try:
+        double_weight_list = json.loads(double_weight_keywords)
+        if not isinstance(double_weight_list, list):
+            raise ValueError("Double-weight keywords must be an array")
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid double_weight_keywords format. Expected JSON array: {str(e)}",
+        )
+
     try:
         # Read and parse resume (returns text and is_image_based flag)
         content = await file.read()
         text, is_image_based = ResumeParser.parse_resume(file.filename, content)
 
-        # Analyze keywords
-        found, missing, score = KeywordMatcher.analyze_resume(text, keyword_list)
+        # Analyze keywords with double-weight support
+        found, missing, score = KeywordMatcher.analyze_resume(
+            text, keyword_list, double_weight_list
+        )
 
         # Create analysis object
         analysis = ResumeAnalysis(

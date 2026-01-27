@@ -4,11 +4,15 @@ import type { KeyboardEvent } from "react";
 interface KeywordInputProps {
   keywords: string[];
   onKeywordsChange: (keywords: string[]) => void;
+  doubleWeightKeywords?: string[];
+  onDoubleWeightChange?: (doubleWeightKeywords: string[]) => void;
 }
 
 const KeywordInput: React.FC<KeywordInputProps> = ({
   keywords,
   onKeywordsChange,
+  doubleWeightKeywords = [],
+  onDoubleWeightChange,
 }) => {
   const [inputValue, setInputValue] = useState("");
 
@@ -53,7 +57,23 @@ const KeywordInput: React.FC<KeywordInputProps> = ({
   };
 
   const handleRemoveKeyword = (index: number) => {
+    const keywordToRemove = keywords[index];
     onKeywordsChange(keywords.filter((_, i) => i !== index));
+    // Also remove from double-weight list if present
+    if (onDoubleWeightChange && doubleWeightKeywords.includes(keywordToRemove)) {
+      onDoubleWeightChange(doubleWeightKeywords.filter((k) => k !== keywordToRemove));
+    }
+  };
+
+  const toggleDoubleWeight = (keyword: string) => {
+    if (!onDoubleWeightChange) return;
+    
+    const isDoubleWeight = doubleWeightKeywords.includes(keyword);
+    if (isDoubleWeight) {
+      onDoubleWeightChange(doubleWeightKeywords.filter((k) => k !== keyword));
+    } else {
+      onDoubleWeightChange([...doubleWeightKeywords, keyword]);
+    }
   };
 
   return (
@@ -61,18 +81,36 @@ const KeywordInput: React.FC<KeywordInputProps> = ({
       <label className="keyword-label">Keywords</label>
       <div className="keyword-input-wrapper">
         <div className="keywords-list">
-          {keywords.map((keyword, index) => (
-            <span key={index} className="keyword-tag">
-              {keyword}
-              <button
-                className="keyword-remove"
-                onClick={() => handleRemoveKeyword(index)}
-                type="button"
+          {keywords.map((keyword, index) => {
+            const isDoubleWeight = doubleWeightKeywords.includes(keyword);
+            return (
+              <span 
+                key={index} 
+                className={`keyword-tag ${isDoubleWeight ? 'double-weight' : ''}`}
               >
-                ✕
-              </button>
-            </span>
-          ))}
+                {onDoubleWeightChange && (
+                  <button
+                    className={`keyword-weight-toggle ${isDoubleWeight ? 'active' : ''}`}
+                    onClick={() => toggleDoubleWeight(keyword)}
+                    type="button"
+                    title={isDoubleWeight ? "Remove double weight" : "Make double weight (2x)"}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill={isDoubleWeight ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  </button>
+                )}
+                {keyword}
+                <button
+                  className="keyword-remove"
+                  onClick={() => handleRemoveKeyword(index)}
+                  type="button"
+                >
+                  ✕
+                </button>
+              </span>
+            );
+          })}
         </div>
         <input
           type="text"
@@ -90,6 +128,11 @@ const KeywordInput: React.FC<KeywordInputProps> = ({
       <p className="keyword-hint">
         Press Enter or use commas to add keywords. Press Backspace to remove the
         last keyword.
+        {onDoubleWeightChange && (
+          <span className="double-weight-hint">
+            {" "}Click the star to make a keyword count as 2x weight.
+          </span>
+        )}
       </p>
     </div>
   );

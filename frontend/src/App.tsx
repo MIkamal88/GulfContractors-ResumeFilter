@@ -15,6 +15,7 @@ const Results = lazy(() => import("./components/Results"));
 function App() {
   const [files, setFiles] = useState<File[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [doubleWeightKeywords, setDoubleWeightKeywords] = useState<string[]>([]);
   const [minScore, setMinScore] = useState<string>("");
   const [generateAiSummary, setGenerateAiSummary] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
@@ -32,8 +33,13 @@ function App() {
     setKeywords(newKeywords);
   };
 
-  const handleProfileSelect = (profileKeywords: string[], profileName?: string) => {
+  const handleProfileSelect = (
+    profileKeywords: string[],
+    profileName?: string,
+    profileDoubleWeightKeywords?: string[]
+  ) => {
     setKeywords(profileKeywords);
+    setDoubleWeightKeywords(profileDoubleWeightKeywords || []);
     setSelectedJobProfileName(profileName || null);
     setError(null);
   };
@@ -61,6 +67,7 @@ function App() {
         keywords,
         minScore === "" ? 0 : Number(minScore),
         generateAiSummary,
+        doubleWeightKeywords,
       );
 
       // Set results to show the Results page
@@ -99,6 +106,7 @@ function App() {
   const handleReset = () => {
     setFiles([]);
     setKeywords([]);
+    setDoubleWeightKeywords([]);
     setMinScore("");
     setGenerateAiSummary(true);
     setResults(null);
@@ -164,6 +172,8 @@ function App() {
               <KeywordInput
                 keywords={keywords}
                 onKeywordsChange={handleKeywordsChange}
+                doubleWeightKeywords={doubleWeightKeywords}
+                onDoubleWeightChange={setDoubleWeightKeywords}
               />
             </div>
 

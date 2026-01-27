@@ -1,4 +1,4 @@
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Optional
 import re
 
 
@@ -158,38 +158,72 @@ class KeywordMatcher:
         return found, missing
 
     @staticmethod
-    def calculate_score(found_keywords: List[str], total_keywords: int) -> int:
+    def calculate_score(
+        found_keywords: List[str],
+        all_keywords: List[str],
+        double_weight_keywords: Optional[List[str]] = None,
+    ) -> int:
         """
-        Calculate percentage score based on keywords found
+        Calculate percentage score based on keywords found with weight support
 
         Args:
             found_keywords: List of keywords found in resume
-            total_keywords: Total number of keywords to search for
+            all_keywords: List of all keywords to search for
+            double_weight_keywords: List of keywords that count as 2x weight
 
         Returns:
             Score as percentage (0-100)
         """
-        if total_keywords == 0:
+        if len(all_keywords) == 0:
             return 0
 
-        score = (len(found_keywords) / total_keywords) * 100
+        if double_weight_keywords is None:
+            double_weight_keywords = []
+
+        # Normalize double_weight_keywords for comparison
+        double_weight_set = {kw.lower().strip() for kw in double_weight_keywords}
+
+        # Calculate total possible weight
+        # Regular keywords = 1 point each, double-weight keywords = 2 points each
+        total_weight = 0
+        for kw in all_keywords:
+            if kw.lower().strip() in double_weight_set:
+                total_weight += 2  # Double-weight keyword worth 2 points
+            else:
+                total_weight += 1  # Regular keyword worth 1 point
+
+        # Calculate found weight
+        found_weight = 0
+        for kw in found_keywords:
+            if kw.lower().strip() in double_weight_set:
+                found_weight += 2  # Double-weight keyword found
+            else:
+                found_weight += 1  # Regular keyword found
+
+        score = (found_weight / total_weight) * 100
         return int(score)
 
     @staticmethod
     def analyze_resume(
-        text: str, keywords: List[str]
+        text: str,
+        keywords: List[str],
+        double_weight_keywords: Optional[List[str]] = None,
     ) -> Tuple[List[str], List[str], int]:
         """
-        Complete analysis of resume against keywords
+        Complete analysis of resume against keywords with weight support
 
         Args:
             text: Resume text content
             keywords: List of keywords to match
+            double_weight_keywords: List of keywords that count as 2x weight
 
         Returns:
             Tuple of (found_keywords, missing_keywords, score)
         """
+        if double_weight_keywords is None:
+            double_weight_keywords = []
+
         found, missing = KeywordMatcher.find_keywords(text, keywords)
-        score = KeywordMatcher.calculate_score(found, len(keywords))
+        score = KeywordMatcher.calculate_score(found, keywords, double_weight_keywords)
 
         return found, missing, score

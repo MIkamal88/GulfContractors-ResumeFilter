@@ -30,6 +30,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     description: "",
     category: "",
     keywords: [] as string[],
+    doubleWeightKeywords: [] as string[],
   });
   const [keywordInput, setKeywordInput] = useState("");
 
@@ -56,6 +57,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
       description: "",
       category: "",
       keywords: [],
+      doubleWeightKeywords: [],
     });
     setKeywordInput("");
     setIsEditing(false);
@@ -82,10 +84,34 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   };
 
   const handleRemoveKeyword = (index: number) => {
+    const keywordToRemove = formData.keywords[index];
     setFormData({
       ...formData,
       keywords: formData.keywords.filter((_, i) => i !== index),
+      // Also remove from double-weight list if present
+      doubleWeightKeywords: formData.doubleWeightKeywords.filter(
+        (k) => k !== keywordToRemove
+      ),
     });
+  };
+
+  const toggleDoubleWeight = (keyword: string) => {
+    const isDoubleWeight = formData.doubleWeightKeywords.includes(keyword);
+    if (isDoubleWeight) {
+      // Remove from double-weight
+      setFormData({
+        ...formData,
+        doubleWeightKeywords: formData.doubleWeightKeywords.filter(
+          (k) => k !== keyword
+        ),
+      });
+    } else {
+      // Add to double-weight
+      setFormData({
+        ...formData,
+        doubleWeightKeywords: [...formData.doubleWeightKeywords, keyword],
+      });
+    }
   };
 
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
@@ -117,6 +143,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
         description: formData.description,
         category: formData.category,
         keywords: formData.keywords,
+        double_weight_keywords: formData.doubleWeightKeywords,
       };
 
       if (isEditing && editingProfileId) {
@@ -155,6 +182,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
       description: profile.description,
       category: profile.category,
       keywords: [...profile.keywords],
+      doubleWeightKeywords: [...(profile.double_weight_keywords || [])],
     });
     setIsEditing(true);
     setEditingProfileId(profile.id);
@@ -203,6 +231,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
         description: profile.description,
         category: profile.category,
         keywords: [...profile.keywords],
+        double_weight_keywords: [...(profile.double_weight_keywords || [])],
       };
 
       await createCustomProfile(duplicatedProfile);
@@ -366,20 +395,43 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                 </div>
 
                 <div className="keywords-display">
-                  {formData.keywords.map((keyword, index) => (
-                    <span key={index} className="keyword-tag">
-                      {keyword}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveKeyword(index)}
-                        className="keyword-remove"
+                  {formData.keywords.map((keyword, index) => {
+                    const isDoubleWeight = formData.doubleWeightKeywords.includes(keyword);
+                    return (
+                      <span 
+                        key={index} 
+                        className={`keyword-tag ${isDoubleWeight ? 'double-weight' : ''}`}
                       >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                        <button
+                          type="button"
+                          onClick={() => toggleDoubleWeight(keyword)}
+                          className={`keyword-weight-toggle ${isDoubleWeight ? 'active' : ''}`}
+                          title={isDoubleWeight ? "Remove double weight" : "Make double weight (2x)"}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill={isDoubleWeight ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                          </svg>
+                        </button>
+                        {keyword}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveKeyword(index)}
+                          className="keyword-remove"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
-                <small>{formData.keywords.length} keywords added</small>
+                <small>
+                  {formData.keywords.length} keywords added
+                  {formData.doubleWeightKeywords.length > 0 && (
+                    <span className="double-weight-count">
+                      {" "}({formData.doubleWeightKeywords.length} double-weight)
+                    </span>
+                  )}
+                </small>
               </div>
 
               <div className="form-actions">

@@ -4,7 +4,7 @@ import { getJobProfiles } from "../services/api";
 import ProfileManager from "./ProfileManager";
 
 interface JobProfileSelectorProps {
-  onProfileSelect: (keywords: string[], profileName?: string) => void;
+  onProfileSelect: (keywords: string[], profileName?: string, doubleWeightKeywords?: string[]) => void;
   onError?: (error: string) => void;
 }
 
@@ -51,7 +51,7 @@ const JobProfileSelector: React.FC<JobProfileSelectorProps> = ({
     if (profileId) {
       const profile = profiles.find((p) => p.id === profileId);
       if (profile) {
-        onProfileSelect(profile.keywords, profile.name);
+        onProfileSelect(profile.keywords, profile.name, profile.double_weight_keywords);
       }
     }
   };

@@ -30,6 +30,7 @@ export interface JobProfile {
   name: string;
   description: string;
   keywords: string[];
+  double_weight_keywords?: string[];  // Keywords that count as 2x weight
   category: string;
 }
 

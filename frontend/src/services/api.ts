@@ -20,6 +20,7 @@ export const filterResumes = async (
   keywords: string[],
   minScore: number = 0,
   generateAiSummary: boolean = true,
+  doubleWeightKeywords: string[] = [],
 ): Promise<FilterResponse> => {
   const formData = new FormData();
 
@@ -28,6 +29,7 @@ export const filterResumes = async (
   });
 
   formData.append("keywords", JSON.stringify(keywords));
+  formData.append("double_weight_keywords", JSON.stringify(doubleWeightKeywords));
   formData.append("min_score", minScore.toString());
   formData.append("generate_ai_summary", generateAiSummary.toString());
 
@@ -44,11 +46,13 @@ export const analyzeSingleResume = async (
   file: File,
   keywords: string[],
   generateAiSummary: boolean = true,
+  doubleWeightKeywords: string[] = [],
 ): Promise<SingleAnalysisResponse> => {
   const formData = new FormData();
 
   formData.append("file", file);
   formData.append("keywords", JSON.stringify(keywords));
+  formData.append("double_weight_keywords", JSON.stringify(doubleWeightKeywords));
   formData.append("generate_ai_summary", generateAiSummary.toString());
 
   const response = await api.post<SingleAnalysisResponse>(

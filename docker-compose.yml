@@ -15,8 +15,8 @@ services:
       - USE_OPENAI=${USE_OPENAI:-False}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - MIN_KEYWORD_SCORE=${MIN_KEYWORD_SCORE:-50}
-    env_file:
-      - ./backend/.env
+    # env_file:
+    #   - ./backend/.env
     restart: unless-stopped
     networks:
       - resumefilter-network
