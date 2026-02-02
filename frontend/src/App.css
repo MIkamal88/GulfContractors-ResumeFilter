@@ -13,49 +13,13 @@
 }
 
 /* ===========================================
-   Header Styles
+   Dark Mode Toggle (fixed top-right)
    =========================================== */
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: white;
-  padding: var(--space-4) var(--space-8);
-  border-bottom: 1px solid var(--gray-200);
-  box-shadow: var(--shadow-sm);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  transition: background-color var(--transition-slow), border-color var(--transition-slow);
-}
-
-.app-logo {
-  height: 48px;
-  width: auto;
-  object-fit: contain;
-}
-
-.app-header-content {
-  flex: 1;
-  text-align: center;
-  padding: 0 var(--space-6);
-}
-
-.app-header h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--gray-900);
-  margin-bottom: var(--space-1);
-  letter-spacing: -0.025em;
-}
-
-.app-subtitle {
-  font-size: 0.875rem;
-  color: var(--gray-500);
-  font-weight: 400;
-}
-
 .dark-mode-toggle {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -68,6 +32,7 @@
   cursor: pointer;
   transition: all var(--transition);
   color: var(--gray-600);
+  box-shadow: var(--shadow-md);
 }
 
 .dark-mode-toggle:hover {
@@ -834,22 +799,6 @@
 }
 
 /* ===========================================
-   Footer Styles
-   =========================================== */
-.app-footer {
-  background: var(--gray-800);
-  color: var(--gray-300);
-  text-align: center;
-  padding: var(--space-6);
-  margin-top: auto;
-  font-size: 0.875rem;
-}
-
-.app-footer p {
-  margin: 0;
-}
-
-/* ===========================================
    Job Profile Selector Styles
    =========================================== */
 .job-profile-selector {
@@ -1282,15 +1231,6 @@
   background-color: #0f0f11;
 }
 
-.app.dark-mode .app-header {
-  background: #1a1a1d;
-  border-bottom-color: var(--gray-200);
-}
-
-/* .app.dark-mode .app-logo { */
-/*   border-radius: var(--radius); */
-/* } */
-
 .app.dark-mode .dark-mode-toggle {
   background: var(--gray-200);
   border-color: var(--gray-300);
@@ -1395,10 +1335,6 @@
   color: var(--primary-400);
 }
 
-.app.dark-mode .app-footer {
-  background: #0f0f11;
-}
-
 .app.dark-mode .reset-btn {
   background: var(--gray-200);
   border-color: var(--gray-300);
@@ -1450,28 +1386,6 @@
    Responsive Styles
    =========================================== */
 @media (max-width: 768px) {
-  .app-header {
-    flex-direction: column;
-    gap: var(--space-4);
-    padding: var(--space-4);
-  }
-
-  .app-logo {
-    height: 40px;
-  }
-
-  .app-header-content {
-    padding: 0;
-  }
-
-  .app-header h1 {
-    font-size: 1.25rem;
-  }
-
-  .app-subtitle {
-    font-size: 0.8125rem;
-  }
-
   .app-main {
     padding: 0 var(--space-4);
     margin: var(--space-6) auto;
@@ -1547,10 +1461,6 @@
 }
 
 @media (max-width: 480px) {
-  .app-header h1 {
-    font-size: 1.125rem;
-  }
-
   .file-upload-area {
     padding: var(--space-6) var(--space-4);
   }
