@@ -39,14 +39,39 @@ class CSVExporter:
                 score_display = str(candidate.score)
                 ai_summary = candidate.ai_summary or "N/A"
 
+            # Format employment history for CSV
+            if candidate.employment_history:
+                history_lines = []
+                for i, entry in enumerate(candidate.employment_history, 1):
+                    history_lines.append(
+                        f"{i}- {entry.company} - {entry.location} - "
+                        f"{entry.role} ({entry.start_date} - {entry.end_date}) "
+                        f"[{entry.duration_years} yrs]"
+                    )
+                if candidate.total_experience_years is not None:
+                    history_lines.append(
+                        f"Total: {candidate.total_experience_years} years"
+                    )
+                employment_history = "\n".join(history_lines)
+            else:
+                employment_history = "N/A"
+
+            total_exp = (
+                str(candidate.total_experience_years)
+                if candidate.total_experience_years is not None
+                else "N/A"
+            )
+
             data.append(
                 {
                     "Filename": candidate.filename,
                     "Score": score_display,
                     "UAE Presence": uae_status,
+                    "Total Experience (Years)": total_exp,
                     "Keywords Found": ", ".join(candidate.keywords_found),
                     "Keywords Missing": ", ".join(candidate.keywords_missing),
                     "AI Summary": ai_summary,
+                    "Employment History": employment_history,
                     "Parsed At": candidate.parsed_at.strftime("%Y-%m-%d %H:%M:%S"),
                 }
             )

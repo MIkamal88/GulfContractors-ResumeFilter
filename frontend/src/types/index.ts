@@ -1,3 +1,12 @@
+export interface EmploymentEntry {
+  company: string;
+  location: string;
+  role: string;
+  start_date: string;
+  end_date: string;
+  duration_years: number;
+}
+
 export interface ResumeAnalysis {
   filename: string;
   text_content: string;
@@ -6,6 +15,8 @@ export interface ResumeAnalysis {
   score: number;
   ai_summary?: string;
   uae_presence?: boolean;
+  employment_history?: EmploymentEntry[];
+  total_experience_years?: number;
   is_image_based: boolean;
   parsed_at: string;
 }

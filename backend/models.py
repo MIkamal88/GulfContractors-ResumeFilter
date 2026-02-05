@@ -12,6 +12,17 @@ class KeywordConfig(BaseModel):
     )
 
 
+class EmploymentEntry(BaseModel):
+    """A single employment history entry extracted from a resume."""
+
+    company: str
+    location: str
+    role: str
+    start_date: str
+    end_date: str
+    duration_years: float
+
+
 class ResumeAnalysis(BaseModel):
     filename: str
     text_content: str
@@ -20,6 +31,8 @@ class ResumeAnalysis(BaseModel):
     score: int
     ai_summary: Optional[str] = None
     uae_presence: Optional[bool] = None
+    employment_history: Optional[List[EmploymentEntry]] = None
+    total_experience_years: Optional[float] = None
     is_image_based: bool = False
     parsed_at: datetime = Field(default_factory=datetime.now)
 

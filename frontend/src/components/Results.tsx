@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import type { ResumeAnalysis } from "../types";
 import { openResume } from "../services/api";
 
@@ -18,15 +18,36 @@ const Results: React.FC<ResultsProps> = ({
   jobProfileName,
 }) => {
   const resultsRef = useRef<HTMLDivElement>(null);
+  const [expandedHistory, setExpandedHistory] = useState<Set<number>>(new Set());
 
   const handleOpenResume = (filename: string) => {
     openResume(filename);
+  };
+
+  const toggleHistory = (index: number) => {
+    setExpandedHistory((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
   };
 
   const handleExportPDF = async () => {
     if (!resultsRef.current) return;
 
     try {
+      // Expand all employment history accordions for PDF capture
+      const previousExpanded = new Set(expandedHistory);
+      const allIndices = new Set(results.map((_, i) => i));
+      setExpandedHistory(allIndices);
+
+      // Wait for DOM to update
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Dynamically import html2pdf
       const html2pdf = (await import('html2pdf.js')).default;
       
@@ -40,6 +61,9 @@ const Results: React.FC<ResultsProps> = ({
       };
 
       await html2pdf().set(opt).from(element).save();
+
+      // Restore previous accordion state
+      setExpandedHistory(previousExpanded);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
@@ -192,6 +216,64 @@ const Results: React.FC<ResultsProps> = ({
                   {result.ai_summary.split('\n').map((line, idx) => (
                     line.trim() && <p key={idx}>{line}</p>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Employment History Accordion */}
+            {result.employment_history && result.employment_history.length > 0 && (
+              <div className="employment-history-section">
+                <button
+                  className={`employment-accordion-toggle ${expandedHistory.has(index) ? 'expanded' : ''}`}
+                  onClick={() => toggleHistory(index)}
+                  type="button"
+                >
+                  <svg className="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                  <h4>
+                    Employment History ({result.employment_history.length} positions
+                    {result.total_experience_years != null && (
+                      <span className="total-exp-inline"> - {result.total_experience_years} years total</span>
+                    )})
+                  </h4>
+                </button>
+
+                <div className={`employment-accordion-content ${expandedHistory.has(index) ? 'expanded' : ''}`}>
+                  <table className="employment-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Company - Location - Role</th>
+                        <th>Period</th>
+                        <th>Years</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.employment_history.map((entry, idx) => (
+                        <tr key={idx}>
+                          <td className="emp-index">{idx + 1}</td>
+                          <td className="emp-detail">
+                            <span className="emp-company">{entry.company}</span>
+                            {" - "}
+                            <span className="emp-location">{entry.location}</span>
+                            {" - "}
+                            <span className="emp-role">{entry.role}</span>
+                          </td>
+                          <td className="emp-period">{entry.start_date} - {entry.end_date}</td>
+                          <td className="emp-duration">{entry.duration_years}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    {result.total_experience_years != null && (
+                      <tfoot>
+                        <tr className="emp-total-row">
+                          <td colSpan={3} className="emp-total-label">Total Experience</td>
+                          <td className="emp-total-value">{result.total_experience_years}</td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
                 </div>
               </div>
             )}

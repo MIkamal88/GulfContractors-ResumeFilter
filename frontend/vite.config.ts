@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: "/resumefilter/",
+  base: "/erp/resumefilter/",
   server: {
     host: true, // Listen on all addresses for Docker
     port: 5173,

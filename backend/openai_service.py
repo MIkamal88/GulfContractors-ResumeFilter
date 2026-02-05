@@ -20,7 +20,7 @@ class OpenAIService:
         self, resume_text: str, keywords_found: list, keywords_missing: list, score: int
     ) -> Dict[str, Any]:
         """
-        Generate an AI summary of the resume and detect UAE presence
+        Generate an AI summary of the resume, detect UAE presence, and extract employment history
 
         Args:
             resume_text: Full text content of the resume
@@ -29,14 +29,15 @@ class OpenAIService:
             score: Calculated keyword match score
 
         Returns:
-            Dict with 'summary' (str) and 'uae_presence' (bool)
+            Dict with 'summary' (str), 'uae_presence' (bool),
+            'employment_history' (list), and 'total_experience_years' (float)
         """
         try:
             prompt = f"""
 You are an expert recruiter analyzing a candidate's resume.
 
 Resume Content:
-{resume_text[:3000]}
+{resume_text[:4000]}
 
 Keyword Analysis:
 - Match Score: {score}%
@@ -46,13 +47,30 @@ Keyword Analysis:
 Please analyze the resume and respond in the following JSON format:
 {{
   "summary": "A concise professional summary (3-4 bullet points) covering: 1) Primary skills and experience, 2) Years of experience including UAE/Gulf experience, 3) Any notable strengths or gaps. Use bullet points separated by newlines.",
-  "uae_presence": true or false
+  "uae_presence": true or false,
+  "employment_history": [
+    {{
+      "company": "Company Name",
+      "location": "City, Country or Country",
+      "role": "Job Title",
+      "start_date": "Mon YYYY",
+      "end_date": "Mon YYYY or Present",
+      "duration_years": 2.5
+    }}
+  ],
+  "total_experience_years": 26.07
 }}
 
-For uae_presence, determine if the candidate appears to be currently located in the UAE by checking:
-- Phone numbers starting with +971 or 00971
-- Addresses or locations mentioning UAE, Dubai, Abu Dhabi, Sharjah, Ajman, Fujairah, Ras Al Khaimah, or Umm Al Quwain
-- Most recent job location being in the UAE
+Rules:
+- For uae_presence, determine if the candidate appears to be currently located in the UAE by checking:
+  - Phone numbers starting with +971 or 00971
+  - Addresses or locations mentioning UAE, Dubai, Abu Dhabi, Sharjah, Ajman, Fujairah, Ras Al Khaimah, or Umm Al Quwain
+  - Most recent job location being in the UAE
+- For employment_history, extract ALL positions from the resume in reverse chronological order (most recent first).
+  - Calculate duration_years as the difference in years between start and end dates, rounded to 2 decimal places.
+  - If a position is current/ongoing, use "Present" as end_date and calculate duration up to the current date.
+  - If location is not clear, use "Not specified".
+- For total_experience_years, sum all the duration_years values, rounded to 2 decimal places.
 
 Respond ONLY with valid JSON, no additional text or markdown formatting.
 """
@@ -66,8 +84,8 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
                     },
                     {"role": "user", "content": prompt},
                 ],
-                max_completion_tokens=300,
-                temperature=0.7,
+                max_completion_tokens=1200,
+                temperature=0.4,
             )
 
             response_content = response.choices[0].message.content
@@ -75,6 +93,8 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
                 return {
                     "summary": "Error: Empty response from AI",
                     "uae_presence": None,
+                    "employment_history": None,
+                    "total_experience_years": None,
                 }
 
             response_text = response_content.strip()
@@ -85,15 +105,24 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
                 return {
                     "summary": result.get("summary", ""),
                     "uae_presence": result.get("uae_presence", False),
+                    "employment_history": result.get("employment_history"),
+                    "total_experience_years": result.get("total_experience_years"),
                 }
             except json.JSONDecodeError:
                 # Fallback if JSON parsing fails - return the raw text as summary
-                return {"summary": response_text, "uae_presence": None}
+                return {
+                    "summary": response_text,
+                    "uae_presence": None,
+                    "employment_history": None,
+                    "total_experience_years": None,
+                }
 
         except Exception as e:
             return {
                 "summary": f"Error generating AI summary: {str(e)}",
                 "uae_presence": None,
+                "employment_history": None,
+                "total_experience_years": None,
             }
 
     def generate_batch_summaries(self, resumes: list) -> list:

@@ -799,6 +799,152 @@
 }
 
 /* ===========================================
+   Employment History Accordion
+   =========================================== */
+.employment-history-section {
+  margin-top: var(--space-4);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.employment-accordion-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--gray-50);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition);
+}
+
+.employment-accordion-toggle:hover {
+  background: var(--gray-100);
+}
+
+.employment-accordion-toggle h4 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.total-exp-inline {
+  font-weight: 500;
+  color: var(--primary-600);
+}
+
+.accordion-chevron {
+  flex-shrink: 0;
+  transition: transform var(--transition);
+  color: var(--gray-500);
+}
+
+.employment-accordion-toggle.expanded .accordion-chevron {
+  transform: rotate(180deg);
+}
+
+.employment-accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.employment-accordion-content.expanded {
+  max-height: 2000px;
+}
+
+.employment-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.employment-table thead th {
+  background: var(--gray-100);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  font-weight: 600;
+  color: var(--gray-600);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.employment-table tbody td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--gray-100);
+  color: var(--gray-700);
+  vertical-align: top;
+}
+
+.employment-table tbody tr:hover {
+  background: var(--gray-50);
+}
+
+.emp-index {
+  width: 2rem;
+  text-align: center;
+  color: var(--gray-400);
+  font-weight: 500;
+}
+
+.emp-detail {
+  line-height: 1.4;
+}
+
+.emp-company {
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.emp-location {
+  color: var(--gray-500);
+}
+
+.emp-role {
+  color: var(--gray-700);
+  font-style: italic;
+}
+
+.emp-period {
+  white-space: nowrap;
+  color: var(--gray-500);
+  font-size: 0.75rem;
+}
+
+.emp-duration {
+  text-align: center;
+  font-weight: 600;
+  color: var(--gray-700);
+  white-space: nowrap;
+}
+
+.emp-total-row {
+  background: var(--gray-50);
+  border-top: 2px solid var(--gray-300);
+}
+
+.emp-total-label {
+  text-align: right;
+  font-weight: 700;
+  color: var(--gray-800);
+  padding: var(--space-2) var(--space-3);
+}
+
+.emp-total-value {
+  text-align: center;
+  font-weight: 700;
+  color: var(--primary-600);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.9375rem;
+}
+
+/* ===========================================
    Job Profile Selector Styles
    =========================================== */
 .job-profile-selector {
@@ -1322,6 +1468,50 @@
 
 .app.dark-mode .image-based-notice svg {
   color: #fbbf24;
+}
+
+.app.dark-mode .employment-history-section {
+  border-color: var(--gray-300);
+}
+
+.app.dark-mode .employment-accordion-toggle {
+  background: var(--gray-100);
+}
+
+.app.dark-mode .employment-accordion-toggle:hover {
+  background: var(--gray-200);
+}
+
+.app.dark-mode .employment-accordion-toggle h4 {
+  color: var(--gray-300);
+}
+
+.app.dark-mode .employment-table thead th {
+  background: var(--gray-200);
+  color: var(--gray-400);
+  border-bottom-color: var(--gray-300);
+}
+
+.app.dark-mode .employment-table tbody td {
+  color: var(--gray-300);
+  border-bottom-color: var(--gray-200);
+}
+
+.app.dark-mode .employment-table tbody tr:hover {
+  background: var(--gray-100);
+}
+
+.app.dark-mode .emp-company {
+  color: var(--gray-200);
+}
+
+.app.dark-mode .emp-total-row {
+  background: var(--gray-100);
+  border-top-color: var(--gray-300);
+}
+
+.app.dark-mode .emp-total-label {
+  color: var(--gray-300);
 }
 
 .app.dark-mode .profile-info {

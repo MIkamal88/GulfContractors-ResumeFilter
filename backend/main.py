@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 
 from models import (
+    EmploymentEntry,
     ResumeAnalysis,
     FilterResponse,
     HealthResponse,
@@ -168,6 +169,15 @@ async def filter_resumes(
                 )
                 candidate.ai_summary = result.get("summary")
                 candidate.uae_presence = result.get("uae_presence")
+                # Map employment history
+                raw_history = result.get("employment_history")
+                if raw_history and isinstance(raw_history, list):
+                    candidate.employment_history = [
+                        EmploymentEntry(**entry)
+                        for entry in raw_history
+                        if isinstance(entry, dict)
+                    ]
+                candidate.total_experience_years = result.get("total_experience_years")
         except Exception as e:
             print(f"Error generating AI summaries: {str(e)}")
             # Continue without AI summaries
@@ -325,13 +335,22 @@ async def analyze_single_resume(
             parsed_at=datetime.now(),
         )
 
-        # Generate AI summary and detect UAE presence if requested
+        # Generate AI summary, detect UAE presence, and extract employment history
         # Skip for image-based resumes to save API usage
         if generate_ai_summary and settings.use_openai and not is_image_based:
             openai_service = OpenAIService()
             result = openai_service.generate_resume_summary(text, found, missing, score)
             analysis.ai_summary = result.get("summary")
             analysis.uae_presence = result.get("uae_presence")
+            # Map employment history
+            raw_history = result.get("employment_history")
+            if raw_history and isinstance(raw_history, list):
+                analysis.employment_history = [
+                    EmploymentEntry(**entry)
+                    for entry in raw_history
+                    if isinstance(entry, dict)
+                ]
+            analysis.total_experience_years = result.get("total_experience_years")
         elif generate_ai_summary and not settings.use_openai:
             analysis.ai_summary = "OpenAI feature is disabled"
 

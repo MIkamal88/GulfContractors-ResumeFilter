@@ -7,7 +7,7 @@
 set -e  # Exit on error
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEPLOY_PATH="/var/www/html/resumefilter"
+DEPLOY_PATH="/var/www/html/erp/resumefilter"
 
 echo "=========================================="
 echo "GC Resume Filter - Apache Deployment"
@@ -198,11 +198,11 @@ echo "Deployment Complete!"
 echo "==========================================${NC}"
 echo ""
 echo "Access the application at:"
-echo -e "  ${GREEN}http://YOUR_SERVER_IP/resumefilter/${NC}"
+echo -e "  ${GREEN}http://YOUR_SERVER_IP/erp/resumefilter/${NC}"
 echo ""
 echo "Services:"
 echo "  - Frontend: $DEPLOY_PATH/frontend"
-echo "  - Backend API: http://YOUR_SERVER_IP/resumefilter/api (proxied to port 8000)"
+echo "  - Backend API: http://YOUR_SERVER_IP/erp/resumefilter/api (proxied to port 8000)"
 echo ""
 echo "Useful commands:"
 echo "  - Check backend status: sudo systemctl status gc-resumefilter-backend"
