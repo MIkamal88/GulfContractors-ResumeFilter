@@ -39,6 +39,23 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 echo ""
 
+# Check for .env file (required for OpenAI API key and other settings)
+if [ ! -f "$SCRIPT_DIR/.env" ]; then
+    echo -e "${RED}ERROR: .env file not found at $SCRIPT_DIR/.env${NC}"
+    echo "This file contains the OpenAI API key and other settings."
+    echo "Copy .env.example to .env and configure it before deploying."
+    exit 1
+fi
+
+# Backup custom job profiles data before deployment
+PROFILES_FILE="$SCRIPT_DIR/backend/data/custom_profiles.json"
+PROFILES_BACKUP=""
+if [ -f "$PROFILES_FILE" ]; then
+    PROFILES_BACKUP="/tmp/custom_profiles_backup_$(date +%Y%m%d_%H%M%S).json"
+    cp "$PROFILES_FILE" "$PROFILES_BACKUP"
+    echo -e "${YELLOW}Backed up custom profiles to $PROFILES_BACKUP${NC}"
+fi
+
 # Step 1: Install backend dependencies
 echo -e "${GREEN}[1/7] Installing backend dependencies...${NC}"
 cd "$SCRIPT_DIR/backend"
@@ -66,28 +83,32 @@ echo ""
 
 # Step 3: Build frontend for production with base path
 echo -e "${GREEN}[3/7] Building frontend for production...${NC}"
-echo "Building with base path: /resumefilter/"
+echo "Building with base path: /erp/resumefilter/"
 npm run build
 echo ""
 
-# Step 4: Deploy frontend to /var/www/html/resumefilter
+# Step 4: Deploy frontend to /var/www/html/erp/resumefilter
 echo -e "${GREEN}[4/7] Deploying frontend to $DEPLOY_PATH...${NC}"
 
 # Create deployment directory
 $SUDO_CMD mkdir -p "$DEPLOY_PATH"
 
-# Backup existing deployment if it exists
-if [ -d "$DEPLOY_PATH/frontend" ]; then
-    echo -e "${YELLOW}Existing deployment found. Backing up...${NC}"
-    $SUDO_CMD mv "$DEPLOY_PATH/frontend" "$DEPLOY_PATH/frontend.backup.$(date +%Y%m%d_%H%M%S)"
+# Backup existing deployment if index.html exists (indicates previous deploy)
+if [ -f "$DEPLOY_PATH/index.html" ]; then
+    BACKUP_DIR="$DEPLOY_PATH.backup.$(date +%Y%m%d_%H%M%S)"
+    echo -e "${YELLOW}Existing deployment found. Backing up to $BACKUP_DIR...${NC}"
+    $SUDO_CMD cp -r "$DEPLOY_PATH" "$BACKUP_DIR"
 fi
 
-# Copy built frontend
-$SUDO_CMD cp -r "$SCRIPT_DIR/frontend/dist" "$DEPLOY_PATH/frontend"
+# Clean old frontend assets
+$SUDO_CMD rm -rf "$DEPLOY_PATH/assets" "$DEPLOY_PATH/index.html"
+
+# Copy built frontend files directly to deploy path (not into a subdirectory)
+$SUDO_CMD cp -r "$SCRIPT_DIR/frontend/dist/"* "$DEPLOY_PATH/"
 
 # Set proper permissions
-$SUDO_CMD chown -R www-data:www-data "$DEPLOY_PATH/frontend"
-$SUDO_CMD chmod -R 755 "$DEPLOY_PATH/frontend"
+$SUDO_CMD chown -R www-data:www-data "$DEPLOY_PATH"
+$SUDO_CMD chmod -R 755 "$DEPLOY_PATH"
 echo ""
 
 # Step 5: Create necessary backend directories
@@ -192,6 +213,13 @@ else
     echo "Check status with: sudo systemctl status gc-resumefilter-backend"
 fi
 
+# Restore custom job profiles data after deployment
+if [ -n "$PROFILES_BACKUP" ] && [ -f "$PROFILES_BACKUP" ]; then
+    mkdir -p "$SCRIPT_DIR/backend/data"
+    cp "$PROFILES_BACKUP" "$PROFILES_FILE"
+    echo -e "${GREEN}Restored custom profiles from backup${NC}"
+fi
+
 echo ""
 echo -e "${GREEN}=========================================="
 echo "Deployment Complete!"
@@ -201,7 +229,7 @@ echo "Access the application at:"
 echo -e "  ${GREEN}http://YOUR_SERVER_IP/erp/resumefilter/${NC}"
 echo ""
 echo "Services:"
-echo "  - Frontend: $DEPLOY_PATH/frontend"
+echo "  - Frontend: $DEPLOY_PATH"
 echo "  - Backend API: http://YOUR_SERVER_IP/erp/resumefilter/api (proxied to port 8000)"
 echo ""
 echo "Useful commands:"
@@ -212,4 +240,5 @@ echo "  - Restart Apache: sudo systemctl restart apache2"
 echo "  - Test Apache config: sudo apache2ctl configtest"
 echo ""
 echo "The deployment does NOT affect other sites in /var/www/html"
+echo "Custom job profiles data is preserved across deployments."
 echo ""
