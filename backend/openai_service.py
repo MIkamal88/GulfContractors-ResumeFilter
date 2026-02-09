@@ -102,8 +102,12 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
             # Parse JSON response
             try:
                 result = json.loads(response_text)
+                summary = result.get("summary", "")
+                # Handle case where OpenAI returns summary as a list instead of string
+                if isinstance(summary, list):
+                    summary = "\n".join(str(item) for item in summary)
                 return {
-                    "summary": result.get("summary", ""),
+                    "summary": summary,
                     "uae_presence": result.get("uae_presence", False),
                     "employment_history": result.get("employment_history"),
                     "total_experience_years": result.get("total_experience_years"),
