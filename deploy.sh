@@ -198,6 +198,12 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
+# Backup existing service file if it exists
+if [ -f "$SERVICE_FILE" ]; then
+    echo -e "${YELLOW}Existing service file found. Backing up...${NC}"
+    $SUDO_CMD cp "$SERVICE_FILE" "$SERVICE_FILE.backup.$(date +%Y%m%d_%H%M%S)"
+fi
+
 echo "Installing systemd service..."
 $SUDO_CMD cp "$SCRIPT_DIR/gc-resumefilter-backend.service" "$SERVICE_FILE"
 $SUDO_CMD systemctl daemon-reload
