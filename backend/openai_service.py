@@ -70,7 +70,7 @@ Rules:
   - Phone numbers starting with +971 or 00971
   - Addresses or locations mentioning UAE, Dubai, Abu Dhabi, Sharjah, Ajman, Fujairah, Ras Al Khaimah, or Umm Al Quwain
   - Most recent job location being in the UAE
-- For employment_history, extract ALL positions from the resume in reverse chronological order (most recent first). Do NOT skip or combine positions. Every distinct role must be its own entry.
+- IMPORTANT: For employment_history, first count ALL distinct job positions listed in the resume, then extract EVERY SINGLE ONE in reverse chronological order (most recent first). Do NOT skip, merge, or combine any positions. If the resume lists 7 jobs, the array MUST have exactly 7 entries.
   - Calculate duration_years as the difference in years between start and end dates, rounded to 2 decimal places.
   - If a position is current/ongoing, use "Present" as end_date and calculate duration from start_date to today's date ({today}).
   - If location is not clear, use "Not specified".
@@ -88,7 +88,7 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
                     },
                     {"role": "user", "content": prompt},
                 ],
-                max_completion_tokens=2500,
+                max_completion_tokens=3500,
                 temperature=0.4,
             )
 
@@ -103,6 +103,16 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
 
             response_text = response_content.strip()
 
+            # Debug: Log token usage and raw response
+            usage = response.usage
+            print(
+                f"[OpenAI] Tokens used - prompt: {usage.prompt_tokens}, completion: {usage.completion_tokens}, total: {usage.total_tokens}"
+                if usage
+                else "[OpenAI] No usage data"
+            )
+            print(f"[OpenAI] Finish reason: {response.choices[0].finish_reason}")
+            print(f"[OpenAI] Raw response (first 500 chars): {response_text[:500]}")
+
             # Parse JSON response
             try:
                 result = json.loads(response_text)
@@ -110,14 +120,21 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
                 # Handle case where OpenAI returns summary as a list instead of string
                 if isinstance(summary, list):
                     summary = "\n".join(str(item) for item in summary)
+                history = result.get("employment_history")
+                total_years = result.get("total_experience_years")
+                print(
+                    f"[OpenAI] Employment entries: {len(history) if history else 0}, Total years: {total_years}"
+                )
                 return {
                     "summary": summary,
                     "uae_presence": result.get("uae_presence", False),
-                    "employment_history": result.get("employment_history"),
-                    "total_experience_years": result.get("total_experience_years"),
+                    "employment_history": history,
+                    "total_experience_years": total_years,
                 }
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
                 # Fallback if JSON parsing fails - return the raw text as summary
+                print(f"[OpenAI] JSON parse error: {e}")
+                print(f"[OpenAI] Full response that failed parsing: {response_text}")
                 return {
                     "summary": response_text,
                     "uae_presence": None,
