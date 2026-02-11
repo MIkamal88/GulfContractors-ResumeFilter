@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     # OpenAI API key for AI summary generation
     openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
     # OpenAI model to use
-    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o")
+    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
     # Minimum keyword score threshold (default: 50)
     min_keyword_score: int = int(os.getenv("MIN_KEYWORD_SCORE", "50"))

@@ -41,7 +41,7 @@ You are an expert recruiter analyzing a candidate's resume.
 Today's date is {today}.
 
 Resume Content:
-{resume_text[:6000]}
+{resume_text[:15000]}
 
 Keyword Analysis:
 - Match Score: {score}%
