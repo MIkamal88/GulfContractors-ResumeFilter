@@ -177,7 +177,19 @@ async def filter_resumes(
                         for entry in raw_history
                         if isinstance(entry, dict)
                     ]
-                candidate.total_experience_years = result.get("total_experience_years")
+                # Calculate total experience ourselves (LLMs are unreliable at arithmetic)
+                if candidate.employment_history:
+                    candidate.total_experience_years = round(
+                        sum(
+                            entry.duration_years
+                            for entry in candidate.employment_history
+                        ),
+                        2,
+                    )
+                else:
+                    candidate.total_experience_years = result.get(
+                        "total_experience_years"
+                    )
         except Exception as e:
             print(f"Error generating AI summaries: {str(e)}")
             # Continue without AI summaries
@@ -350,7 +362,14 @@ async def analyze_single_resume(
                     for entry in raw_history
                     if isinstance(entry, dict)
                 ]
-            analysis.total_experience_years = result.get("total_experience_years")
+            # Calculate total experience ourselves (LLMs are unreliable at arithmetic)
+            if analysis.employment_history:
+                analysis.total_experience_years = round(
+                    sum(entry.duration_years for entry in analysis.employment_history),
+                    2,
+                )
+            else:
+                analysis.total_experience_years = result.get("total_experience_years")
         elif generate_ai_summary and not settings.use_openai:
             analysis.ai_summary = "OpenAI feature is disabled"
 
