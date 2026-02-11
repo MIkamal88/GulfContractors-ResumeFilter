@@ -39,6 +39,15 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 echo ""
 
+# Pull latest code from remote
+echo -e "${GREEN}Pulling latest code from remote...${NC}"
+git -C "$SCRIPT_DIR" pull
+if [ $? -ne 0 ]; then
+    echo -e "${RED}ERROR: git pull failed. Resolve conflicts before deploying.${NC}"
+    exit 1
+fi
+echo ""
+
 # Check for .env file (required for OpenAI API key and other settings)
 if [ ! -f "$SCRIPT_DIR/.env" ]; then
     echo -e "${RED}ERROR: .env file not found at $SCRIPT_DIR/.env${NC}"
