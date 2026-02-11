@@ -1,4 +1,5 @@
 import json
+from datetime import date
 from openai import OpenAI
 from typing import Dict, Any
 from config import settings
@@ -33,11 +34,14 @@ class OpenAIService:
             'employment_history' (list), and 'total_experience_years' (float)
         """
         try:
+            today = date.today().strftime("%B %d, %Y")
             prompt = f"""
 You are an expert recruiter analyzing a candidate's resume.
 
+Today's date is {today}.
+
 Resume Content:
-{resume_text[:4000]}
+{resume_text[:6000]}
 
 Keyword Analysis:
 - Match Score: {score}%
@@ -46,7 +50,7 @@ Keyword Analysis:
 
 Please analyze the resume and respond in the following JSON format:
 {{
-  "summary": "A concise professional summary (3-4 bullet points) covering: 1) Primary skills and experience, 2) Years of experience including UAE/Gulf experience, 3) Any notable strengths or gaps. Use bullet points separated by newlines.",
+  "summary": "A concise professional summary as a SINGLE STRING with 3-4 bullet points separated by newlines. Example: '• Point 1\\n• Point 2\\n• Point 3'. Cover: 1) Primary skills and experience, 2) Years of experience including UAE/Gulf experience, 3) Any notable strengths or gaps.",
   "uae_presence": true or false,
   "employment_history": [
     {{
@@ -66,9 +70,9 @@ Rules:
   - Phone numbers starting with +971 or 00971
   - Addresses or locations mentioning UAE, Dubai, Abu Dhabi, Sharjah, Ajman, Fujairah, Ras Al Khaimah, or Umm Al Quwain
   - Most recent job location being in the UAE
-- For employment_history, extract ALL positions from the resume in reverse chronological order (most recent first).
+- For employment_history, extract ALL positions from the resume in reverse chronological order (most recent first). Do NOT skip or combine positions. Every distinct role must be its own entry.
   - Calculate duration_years as the difference in years between start and end dates, rounded to 2 decimal places.
-  - If a position is current/ongoing, use "Present" as end_date and calculate duration up to the current date.
+  - If a position is current/ongoing, use "Present" as end_date and calculate duration from start_date to today's date ({today}).
   - If location is not clear, use "Not specified".
 - For total_experience_years, sum all the duration_years values, rounded to 2 decimal places.
 
@@ -84,7 +88,7 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
                     },
                     {"role": "user", "content": prompt},
                 ],
-                max_completion_tokens=1200,
+                max_completion_tokens=2500,
                 temperature=0.4,
             )
 
