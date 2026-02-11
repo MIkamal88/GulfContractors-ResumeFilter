@@ -59,10 +59,10 @@ Please analyze the resume and respond in the following JSON format:
       "role": "Job Title",
       "start_date": "Mon YYYY",
       "end_date": "Mon YYYY or Present",
-      "duration_years": 2.5
+      "duration_years": 0.0
     }}
   ],
-  "total_experience_years": 26.07
+  "total_experience_years": 0.0
 }}
 
 Rules:
