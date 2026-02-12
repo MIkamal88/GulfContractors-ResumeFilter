@@ -1757,6 +1757,22 @@
     page-break-inside: avoid;
   }
 
+  /* Keep entire employment history block on one page when possible */
+  .employment-history-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Fallback: if table is too tall and must split, prevent
+     browser from duplicating thead/tfoot on every page */
+  .employment-table thead {
+    display: table-row-group;
+  }
+
+  .employment-table tfoot {
+    display: table-row-group;
+  }
+
   .employment-table tr {
     break-inside: avoid;
     page-break-inside: avoid;
