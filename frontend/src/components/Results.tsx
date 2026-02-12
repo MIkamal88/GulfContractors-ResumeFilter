@@ -40,32 +40,35 @@ const Results: React.FC<ResultsProps> = ({
     if (!resultsRef.current) return;
 
     try {
-      // Expand all employment history accordions for PDF capture
-      const previousExpanded = new Set(expandedHistory);
-      const allIndices = new Set(results.map((_, i) => i));
-      setExpandedHistory(allIndices);
+      const element = resultsRef.current;
+
+      // Add pdf-exporting class to hide buttons and force-show accordions via CSS
+      element.classList.add('pdf-exporting');
 
       // Wait for DOM to update
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
       // Dynamically import html2pdf
       const html2pdf = (await import('html2pdf.js')).default;
       
-      const element = resultsRef.current;
       const opt = {
         margin: 10,
         filename: `resume_analysis_${new Date().toISOString().split("T")[0]}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
       await html2pdf().set(opt).from(element).save();
 
-      // Restore previous accordion state
-      setExpandedHistory(previousExpanded);
+      // Remove pdf-exporting class to restore normal UI
+      element.classList.remove('pdf-exporting');
     } catch (error) {
       console.error('Error generating PDF:', error);
+      if (resultsRef.current) {
+        resultsRef.current.classList.remove('pdf-exporting');
+      }
       alert('Failed to generate PDF. Please try again.');
     }
   };
@@ -222,7 +225,10 @@ const Results: React.FC<ResultsProps> = ({
 
             {/* Employment History Accordion */}
             {result.employment_history && result.employment_history.length > 0 && (
-              <div className="employment-history-section">
+              <div
+                className="employment-history-section"
+                data-pdf-title={`Employment History (${result.employment_history.length} positions${result.total_experience_years != null ? ` - ${result.total_experience_years} years total` : ''})`}
+              >
                 <button
                   className={`employment-accordion-toggle ${expandedHistory.has(index) ? 'expanded' : ''}`}
                   onClick={() => toggleHistory(index)}

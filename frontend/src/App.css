@@ -945,6 +945,65 @@
 }
 
 /* ===========================================
+   PDF Export Styles
+   =========================================== */
+
+/* Hide interactive buttons during PDF export */
+.pdf-exporting .export-buttons,
+.pdf-exporting .open-resume-btn {
+  display: none !important;
+}
+
+/* Hide the accordion toggle button but show a static title instead */
+.pdf-exporting .employment-accordion-toggle {
+  display: none !important;
+}
+
+/* Show employment history title via ::before pseudo-element */
+.pdf-exporting .employment-history-section::before {
+  content: attr(data-pdf-title);
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  background: var(--gray-50);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+/* Force-expand all accordion content for PDF */
+.pdf-exporting .employment-accordion-content {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Prevent page breaks inside key elements */
+.pdf-exporting .result-card {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.pdf-exporting .ai-summary {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.pdf-exporting .employment-history-section {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.pdf-exporting .employment-table tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.pdf-exporting .matched-keywords {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ===========================================
    Job Profile Selector Styles
    =========================================== */
 .job-profile-selector {
