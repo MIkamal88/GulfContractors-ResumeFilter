@@ -977,18 +977,23 @@
   overflow: visible !important;
 }
 
-/* Prevent page breaks inside key elements */
+/* Replace card border with a simple divider (cards can split across pages) */
 .pdf-exporting .result-card {
+  border: none;
+  box-shadow: none;
+  border-bottom: 2px solid var(--gray-200);
+  padding-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
+  border-radius: 0;
+}
+
+/* Prevent page breaks inside smaller elements that should stay together */
+.pdf-exporting .result-header {
   break-inside: avoid;
   page-break-inside: avoid;
 }
 
 .pdf-exporting .ai-summary {
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-
-.pdf-exporting .employment-history-section {
   break-inside: avoid;
   page-break-inside: avoid;
 }
