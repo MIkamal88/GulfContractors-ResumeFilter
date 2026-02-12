@@ -42,6 +42,12 @@ const Results: React.FC<ResultsProps> = ({
     try {
       const html2pdf = (await import('html2pdf.js')).default;
 
+      // Show loading overlay to hide the clone from the user
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: white; z-index: 99998; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #666;';
+      overlay.textContent = 'Generating PDF...';
+      document.body.appendChild(overlay);
+
       // Clone the results container so we never touch the live UI
       const clone = resultsRef.current.cloneNode(true) as HTMLElement;
 
@@ -78,11 +84,13 @@ const Results: React.FC<ResultsProps> = ({
         (card as HTMLElement).style.marginBottom = '16px';
       });
 
-      // Place clone off-screen for capture
+      // Place clone on-screen (behind overlay) so html2canvas can render it
       clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
+      clone.style.left = '0';
       clone.style.top = '0';
       clone.style.width = resultsRef.current.offsetWidth + 'px';
+      clone.style.zIndex = '99997';
+      clone.style.background = 'white';
       document.body.appendChild(clone);
 
       const opt = {
@@ -96,13 +104,15 @@ const Results: React.FC<ResultsProps> = ({
 
       await html2pdf().set(opt).from(clone).save();
 
-      // Clean up the clone
+      // Clean up
       document.body.removeChild(clone);
+      document.body.removeChild(overlay);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      // Clean up any remaining clone
-      const leftover = document.querySelector('body > .results-container');
-      if (leftover) leftover.remove();
+      // Clean up any remaining elements
+      document.querySelectorAll('body > .results-container').forEach(el => el.remove());
+      const leftoverOverlay = document.querySelector('body > div[style*="99998"]');
+      if (leftoverOverlay) leftoverOverlay.remove();
       alert('Failed to generate PDF. Please try again.');
     }
   };
