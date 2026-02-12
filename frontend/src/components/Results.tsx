@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import type { ResumeAnalysis } from "../types";
 import { openResume } from "../services/api";
 
@@ -17,7 +17,6 @@ const Results: React.FC<ResultsProps> = ({
   onDownloadCSV,
   jobProfileName,
 }) => {
-  const resultsRef = useRef<HTMLDivElement>(null);
   const [expandedHistory, setExpandedHistory] = useState<Set<number>>(new Set());
 
   const handleOpenResume = (filename: string) => {
@@ -36,88 +35,15 @@ const Results: React.FC<ResultsProps> = ({
     });
   };
 
-  const handleExportPDF = async () => {
-    if (!resultsRef.current) return;
-
-    try {
-      const html2pdf = (await import('html2pdf.js')).default;
-
-      // Show loading overlay to hide the clone from the user
-      const overlay = document.createElement('div');
-      overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: white; z-index: 99998; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #666;';
-      overlay.textContent = 'Generating PDF...';
-      document.body.appendChild(overlay);
-
-      // Clone the results container so we never touch the live UI
-      const clone = resultsRef.current.cloneNode(true) as HTMLElement;
-
-      // Remove all interactive buttons from the clone
-      clone.querySelectorAll('.export-buttons, .open-resume-btn').forEach(el => el.remove());
-
-      // For each employment section: replace toggle with static title, expand content
-      clone.querySelectorAll('.employment-history-section').forEach(section => {
-        const toggle = section.querySelector('.employment-accordion-toggle');
-        const content = section.querySelector('.employment-accordion-content');
-        const title = section.getAttribute('data-pdf-title');
-
-        if (toggle) {
-          const heading = document.createElement('div');
-          heading.style.cssText = 'padding: 8px 12px; background: #f9fafb; font-size: 0.875rem; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;';
-          heading.textContent = title || 'Employment History';
-          toggle.replaceWith(heading);
-        }
-
-        if (content) {
-          content.classList.add('expanded');
-          (content as HTMLElement).style.maxHeight = 'none';
-          (content as HTMLElement).style.overflow = 'visible';
-        }
-      });
-
-      // Strip card borders for clean page splits, use bottom divider instead
-      clone.querySelectorAll('.result-card').forEach(card => {
-        (card as HTMLElement).style.border = 'none';
-        (card as HTMLElement).style.boxShadow = 'none';
-        (card as HTMLElement).style.borderBottom = '2px solid #e5e7eb';
-        (card as HTMLElement).style.borderRadius = '0';
-        (card as HTMLElement).style.paddingBottom = '24px';
-        (card as HTMLElement).style.marginBottom = '16px';
-      });
-
-      // Place clone on-screen (behind overlay) so html2canvas can render it
-      clone.style.position = 'absolute';
-      clone.style.left = '0';
-      clone.style.top = '0';
-      clone.style.width = resultsRef.current.offsetWidth + 'px';
-      clone.style.zIndex = '99997';
-      clone.style.background = 'white';
-      document.body.appendChild(clone);
-
-      const opt = {
-        margin: 10,
-        filename: `resume_analysis_${new Date().toISOString().split("T")[0]}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      };
-
-      await html2pdf().set(opt).from(clone).save();
-
-      // Clean up
-      document.body.removeChild(clone);
-      document.body.removeChild(overlay);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      // Clean up any remaining elements
-      document.querySelectorAll('body > .results-container').forEach(el => el.remove());
-      const leftoverOverlay = document.querySelector('body > div[style*="99998"]');
-      if (leftoverOverlay) leftoverOverlay.remove();
-      alert('Failed to generate PDF. Please try again.');
-    }
+  const handlePrint = () => {
+    // Set document title for better default filename in "Save as PDF"
+    const originalTitle = document.title;
+    document.title = `Resume_Analysis_${new Date().toISOString().split("T")[0]}`;
+    window.print();
+    document.title = originalTitle;
   };
   return (
-    <div className="results-container" ref={resultsRef}>
+    <div className="results-container">
       <div className="results-header">
         <h2>
           Analysis Results
@@ -154,15 +80,13 @@ const Results: React.FC<ResultsProps> = ({
                 Download CSV
               </button>
             )}
-            <button className="download-btn pdf-btn" onClick={handleExportPDF}>
+            <button className="download-btn pdf-btn" onClick={handlePrint}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
               </svg>
-              Export PDF
+              Print / Save PDF
             </button>
           </div>
         )}

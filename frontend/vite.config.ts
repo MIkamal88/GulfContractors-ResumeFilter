@@ -28,7 +28,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'pdf-vendor': ['html2pdf.js'],
           'http-vendor': ['axios'],
         },
       },

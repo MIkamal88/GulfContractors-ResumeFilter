@@ -1661,6 +1661,118 @@
 }
 
 /* ===========================================
+   Print Styles (for window.print / Save as PDF)
+   =========================================== */
+@media print {
+  /* Hide non-results elements */
+  .dark-mode-toggle,
+  .form-actions {
+    display: none !important;
+  }
+
+  /* Hide interactive buttons */
+  .export-buttons,
+  .open-resume-btn {
+    display: none !important;
+  }
+
+  /* Hide accordion toggle button */
+  .employment-accordion-toggle {
+    display: none !important;
+  }
+
+  /* Show static employment history title via ::before */
+  .employment-history-section::before {
+    content: attr(data-pdf-title);
+    display: block;
+    padding: 8px 12px;
+    background: #f9fafb;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* Force-expand all accordion content */
+  .employment-accordion-content {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Clean card styling for print — no borders, use bottom divider */
+  .result-card {
+    border: none !important;
+    box-shadow: none !important;
+    border-bottom: 2px solid #e5e7eb !important;
+    border-radius: 0 !important;
+    padding-bottom: 16px;
+    margin-bottom: 8px;
+  }
+
+  /* Remove hover effects */
+  .result-card:hover {
+    box-shadow: none !important;
+  }
+
+  /* Page break control — keep small sections together */
+  .result-header {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .ai-summary {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .matched-keywords {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .employment-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Reset dark mode colors for print */
+  .app.dark-mode {
+    background: white !important;
+    color: black !important;
+  }
+
+  .app.dark-mode .result-filename,
+  .app.dark-mode .ai-summary-content p,
+  .app.dark-mode .score-label,
+  .app.dark-mode .employment-table tbody td,
+  .app.dark-mode .emp-company,
+  .app.dark-mode .emp-role,
+  .app.dark-mode .emp-total-label {
+    color: #1f2937 !important;
+  }
+
+  .app.dark-mode .results-container,
+  .app.dark-mode .result-card,
+  .app.dark-mode .employment-table thead th,
+  .app.dark-mode .emp-total-row {
+    background: white !important;
+  }
+
+  /* Ensure full width for print */
+  .app-main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .results-container {
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+
+/* ===========================================
    Animations
    =========================================== */
 @keyframes spin {

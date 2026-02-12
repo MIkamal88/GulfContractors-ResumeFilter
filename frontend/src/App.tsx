@@ -8,7 +8,6 @@ import type { FilterResponse } from "./types";
 
 
 // Lazy load Results component since it's only needed after form submission
-// and includes the heavy html2pdf.js library
 const Results = lazy(() => import("./components/Results"));
 
 function App() {
