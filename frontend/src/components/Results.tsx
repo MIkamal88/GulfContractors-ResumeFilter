@@ -40,35 +40,69 @@ const Results: React.FC<ResultsProps> = ({
     if (!resultsRef.current) return;
 
     try {
-      const element = resultsRef.current;
-
-      // Add pdf-exporting class to hide buttons and force-show accordions via CSS
-      element.classList.add('pdf-exporting');
-
-      // Wait for DOM to update
-      await new Promise((resolve) => setTimeout(resolve, 150));
-
-      // Dynamically import html2pdf
       const html2pdf = (await import('html2pdf.js')).default;
-      
+
+      // Clone the results container so we never touch the live UI
+      const clone = resultsRef.current.cloneNode(true) as HTMLElement;
+
+      // Remove all interactive buttons from the clone
+      clone.querySelectorAll('.export-buttons, .open-resume-btn').forEach(el => el.remove());
+
+      // For each employment section: replace toggle with static title, expand content
+      clone.querySelectorAll('.employment-history-section').forEach(section => {
+        const toggle = section.querySelector('.employment-accordion-toggle');
+        const content = section.querySelector('.employment-accordion-content');
+        const title = section.getAttribute('data-pdf-title');
+
+        if (toggle) {
+          const heading = document.createElement('div');
+          heading.style.cssText = 'padding: 8px 12px; background: #f9fafb; font-size: 0.875rem; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;';
+          heading.textContent = title || 'Employment History';
+          toggle.replaceWith(heading);
+        }
+
+        if (content) {
+          content.classList.add('expanded');
+          (content as HTMLElement).style.maxHeight = 'none';
+          (content as HTMLElement).style.overflow = 'visible';
+        }
+      });
+
+      // Strip card borders for clean page splits, use bottom divider instead
+      clone.querySelectorAll('.result-card').forEach(card => {
+        (card as HTMLElement).style.border = 'none';
+        (card as HTMLElement).style.boxShadow = 'none';
+        (card as HTMLElement).style.borderBottom = '2px solid #e5e7eb';
+        (card as HTMLElement).style.borderRadius = '0';
+        (card as HTMLElement).style.paddingBottom = '24px';
+        (card as HTMLElement).style.marginBottom = '16px';
+      });
+
+      // Place clone off-screen for capture
+      clone.style.position = 'absolute';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.width = resultsRef.current.offsetWidth + 'px';
+      document.body.appendChild(clone);
+
       const opt = {
         margin: 10,
         filename: `resume_analysis_${new Date().toISOString().split("T")[0]}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        pagebreak: { mode: ['css', 'legacy'] }
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      await html2pdf().set(opt).from(element).save();
+      await html2pdf().set(opt).from(clone).save();
 
-      // Remove pdf-exporting class to restore normal UI
-      element.classList.remove('pdf-exporting');
+      // Clean up the clone
+      document.body.removeChild(clone);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      if (resultsRef.current) {
-        resultsRef.current.classList.remove('pdf-exporting');
-      }
+      // Clean up any remaining clone
+      const leftover = document.querySelector('body > .results-container');
+      if (leftover) leftover.remove();
       alert('Failed to generate PDF. Please try again.');
     }
   };
