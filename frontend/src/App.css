@@ -1699,6 +1699,33 @@
     overflow: visible !important;
   }
 
+  /* Compact summary stats — keep all 3 in one row */
+  .results-summary {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .summary-stat {
+    padding: 6px 8px !important;
+    border: 1px solid #e5e7eb !important;
+    background: #f9fafb !important;
+  }
+
+  .stat-label {
+    font-size: 0.625rem !important;
+    margin-bottom: 2px !important;
+  }
+
+  .stat-value {
+    font-size: 1.125rem !important;
+    color: #1f2937 !important;
+  }
+
+  .stat-value.passed {
+    color: #059669 !important;
+  }
+
   /* Clean card styling for print — no borders, use bottom divider */
   .result-card {
     border: none !important;
@@ -1754,8 +1781,18 @@
   .app.dark-mode .results-container,
   .app.dark-mode .result-card,
   .app.dark-mode .employment-table thead th,
-  .app.dark-mode .emp-total-row {
+  .app.dark-mode .emp-total-row,
+  .app.dark-mode .summary-stat {
     background: white !important;
+  }
+
+  .app.dark-mode .stat-value,
+  .app.dark-mode .stat-label {
+    color: #1f2937 !important;
+  }
+
+  .app.dark-mode .stat-value.passed {
+    color: #059669 !important;
   }
 
   /* Ensure full width for print */
