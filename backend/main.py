@@ -16,7 +16,7 @@ from models import (
 from job_profiles_manager import JobProfilesManager
 from resume_parser import ResumeParser
 from keyword_matcher import KeywordMatcher
-from openai_service import OpenAIService
+from ai_service import AIService
 from csv_exporter import CSVExporter
 from config import settings
 
@@ -67,7 +67,7 @@ async def filter_resumes(
     ),
     min_score: int = Form(None, description="Minimum score threshold (0-100)"),
     generate_ai_summary: bool = Form(
-        True, description="Generate AI summaries using OpenAI"
+        True, description="Generate AI summaries using Gemini"
     ),
 ):
     """
@@ -154,14 +154,14 @@ async def filter_resumes(
 
     # Generate AI summaries and detect UAE presence for valid candidates if requested
     # Skip image-based resumes to save API usage
-    if generate_ai_summary and valid_candidates and settings.use_openai:
+    if generate_ai_summary and valid_candidates and settings.use_ai:
         try:
-            openai_service = OpenAIService()
+            ai_service = AIService()
             for candidate in valid_candidates:
                 if candidate.is_image_based:
                     # Skip AI processing for image-based resumes
                     continue
-                result = openai_service.generate_resume_summary(
+                result = ai_service.generate_resume_summary(
                     candidate.text_content,
                     candidate.keywords_found,
                     candidate.keywords_missing,
@@ -193,8 +193,8 @@ async def filter_resumes(
         except Exception as e:
             print(f"Error generating AI summaries: {str(e)}")
             # Continue without AI summaries
-    elif generate_ai_summary and not settings.use_openai:
-        print("OpenAI feature is disabled. Skipping AI summary generation.")
+    elif generate_ai_summary and not settings.use_ai:
+        print("AI feature is disabled. Skipping AI summary generation.")
 
     # Generate timestamp for CSV identification
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -289,7 +289,7 @@ async def analyze_single_resume(
         "[]", description="JSON array of keywords that count as 2x weight"
     ),
     generate_ai_summary: bool = Form(
-        True, description="Generate AI summary using OpenAI"
+        True, description="Generate AI summary using Gemini"
     ),
 ):
     """
@@ -349,9 +349,9 @@ async def analyze_single_resume(
 
         # Generate AI summary, detect UAE presence, and extract employment history
         # Skip for image-based resumes to save API usage
-        if generate_ai_summary and settings.use_openai and not is_image_based:
-            openai_service = OpenAIService()
-            result = openai_service.generate_resume_summary(text, found, missing, score)
+        if generate_ai_summary and settings.use_ai and not is_image_based:
+            ai_service = AIService()
+            result = ai_service.generate_resume_summary(text, found, missing, score)
             analysis.ai_summary = result.get("summary")
             analysis.uae_presence = result.get("uae_presence")
             # Map employment history
@@ -370,8 +370,8 @@ async def analyze_single_resume(
                 )
             else:
                 analysis.total_experience_years = result.get("total_experience_years")
-        elif generate_ai_summary and not settings.use_openai:
-            analysis.ai_summary = "OpenAI feature is disabled"
+        elif generate_ai_summary and not settings.use_ai:
+            analysis.ai_summary = "AI feature is disabled"
 
         return analysis
 

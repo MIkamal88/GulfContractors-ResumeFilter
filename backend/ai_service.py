@@ -1,21 +1,23 @@
 import json
+import re
 from datetime import date
-from openai import OpenAI
+from google import genai
+from google.genai import types
 from typing import Dict, Any
 from config import settings
 
 
-class OpenAIService:
+class AIService:
     """
-    Service for generating AI summaries of resumes using OpenAI API
+    Service for generating AI summaries of resumes using Google Gemini API
     """
 
     def __init__(self):
-        if not settings.openai_api_key:
+        if not settings.gemini_api_key:
             raise ValueError(
-                "OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file."
+                "Gemini API key is not configured. Please set GEMINI_API_KEY in your .env file."
             )
-        self.client = OpenAI(api_key=settings.openai_api_key)
+        self.client = genai.Client(api_key=settings.gemini_api_key)
 
     def generate_resume_summary(
         self, resume_text: str, keywords_found: list, keywords_missing: list, score: int
@@ -79,20 +81,17 @@ Rules:
 Respond ONLY with valid JSON, no additional text or markdown formatting.
 """
 
-            response = self.client.chat.completions.create(
-                model=settings.openai_model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert technical recruiter who provides concise, objective candidate assessments. Always respond with valid JSON only.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                max_completion_tokens=3500,
-                temperature=0.4,
+            response = self.client.models.generate_content(
+                model=settings.gemini_model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction="You are an expert technical recruiter who provides concise, objective candidate assessments. Always respond with valid JSON only.",
+                    max_output_tokens=3500,
+                    temperature=0.4,
+                ),
             )
 
-            response_content = response.choices[0].message.content
+            response_content = response.text
             if response_content is None:
                 return {
                     "summary": "Error: Empty response from AI",
@@ -103,27 +102,37 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
 
             response_text = response_content.strip()
 
+            # Strip markdown JSON fences if present (e.g. ```json ... ```)
+            if response_text.startswith("```"):
+                response_text = re.sub(r"^```(?:json)?\s*\n?", "", response_text)
+                response_text = re.sub(r"\n?```\s*$", "", response_text)
+                response_text = response_text.strip()
+
             # Debug: Log token usage and raw response
-            usage = response.usage
-            print(
-                f"[OpenAI] Tokens used - prompt: {usage.prompt_tokens}, completion: {usage.completion_tokens}, total: {usage.total_tokens}"
-                if usage
-                else "[OpenAI] No usage data"
-            )
-            print(f"[OpenAI] Finish reason: {response.choices[0].finish_reason}")
-            print(f"[OpenAI] Raw response (first 500 chars): {response_text[:500]}")
+            usage = response.usage_metadata
+            if usage:
+                print(
+                    f"[Gemini] Tokens used - prompt: {usage.prompt_token_count}, "
+                    f"completion: {usage.candidates_token_count}, "
+                    f"total: {usage.total_token_count}"
+                )
+            else:
+                print("[Gemini] No usage data")
+            if response.candidates:
+                print(f"[Gemini] Finish reason: {response.candidates[0].finish_reason}")
+            print(f"[Gemini] Raw response (first 500 chars): {response_text[:500]}")
 
             # Parse JSON response
             try:
                 result = json.loads(response_text)
                 summary = result.get("summary", "")
-                # Handle case where OpenAI returns summary as a list instead of string
+                # Handle case where AI returns summary as a list instead of string
                 if isinstance(summary, list):
                     summary = "\n".join(str(item) for item in summary)
                 history = result.get("employment_history")
                 total_years = result.get("total_experience_years")
                 print(
-                    f"[OpenAI] Employment entries: {len(history) if history else 0}, Total years: {total_years}"
+                    f"[Gemini] Employment entries: {len(history) if history else 0}, Total years: {total_years}"
                 )
                 return {
                     "summary": summary,
@@ -133,8 +142,8 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
                 }
             except json.JSONDecodeError as e:
                 # Fallback if JSON parsing fails - return the raw text as summary
-                print(f"[OpenAI] JSON parse error: {e}")
-                print(f"[OpenAI] Full response that failed parsing: {response_text}")
+                print(f"[Gemini] JSON parse error: {e}")
+                print(f"[Gemini] Full response that failed parsing: {response_text}")
                 return {
                     "summary": response_text,
                     "uae_presence": None,

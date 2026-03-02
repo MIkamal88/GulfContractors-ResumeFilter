@@ -4,12 +4,12 @@ import os
 
 
 class Settings(BaseSettings):
-    # Feature flag to disable OpenAI integration
-    use_openai: bool = os.getenv("USE_OPENAI", "True").lower() in ("true", "1", "yes")
-    # OpenAI API key for AI summary generation
-    openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
-    # OpenAI model to use
-    openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    # Feature flag to disable AI integration
+    use_ai: bool = os.getenv("USE_AI", "True").lower() in ("true", "1", "yes")
+    # Gemini API key for AI summary generation
+    gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
+    # Gemini model to use
+    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
     # Minimum keyword score threshold (default: 50)
     min_keyword_score: int = int(os.getenv("MIN_KEYWORD_SCORE", "50"))

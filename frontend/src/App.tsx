@@ -191,7 +191,7 @@ function App() {
                     <span>Generate AI Summary</span>
                   </label>
                   <p className="input-hint">
-                    Enable OpenAI-powered resume summaries
+                    Enable AI-powered resume summaries
                   </p>
                 </div>
               </div>
