@@ -3,6 +3,7 @@ import re
 from datetime import date
 from google import genai
 from google.genai import types
+from google.genai.types import ThinkingConfig
 from typing import Dict, Any
 from config import settings
 
@@ -88,6 +89,8 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
                     system_instruction="You are an expert technical recruiter who provides concise, objective candidate assessments. Always respond with valid JSON only.",
                     max_output_tokens=3500,
                     temperature=0.4,
+                    response_mime_type="application/json",
+                    thinking_config=ThinkingConfig(thinking_budget=0),
                 ),
             )
 
