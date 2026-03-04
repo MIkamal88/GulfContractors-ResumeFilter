@@ -44,7 +44,7 @@ You are an expert recruiter analyzing a candidate's resume.
 Today's date is {today}.
 
 Resume Content:
-{resume_text[:15000]}
+{resume_text[:50000]}
 
 Keyword Analysis:
 - Match Score: {score}%
@@ -87,7 +87,7 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction="You are an expert technical recruiter who provides concise, objective candidate assessments. Always respond with valid JSON only.",
-                    max_output_tokens=3500,
+                    max_output_tokens=5000,
                     temperature=0.4,
                     response_mime_type="application/json",
                     thinking_config=ThinkingConfig(thinking_budget=0),
