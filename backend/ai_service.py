@@ -1,44 +1,116 @@
 import json
 import re
 from datetime import date
-from google import genai
-from google.genai import types
-from google.genai.types import ThinkingConfig
-from typing import Dict, Any
+from typing import Any, Dict
+
+from ai_providers import AIProviderError, build_provider_chain
 from config import settings
+
+
+SYSTEM_INSTRUCTION = (
+    "You are an expert technical recruiter who provides concise, objective "
+    "candidate assessments. Always respond with valid JSON only."
+)
 
 
 class AIService:
     """
-    Service for generating AI summaries of resumes using Google Gemini API
+    Service for generating AI summaries of resumes.
+
+    Uses a configurable provider chain (Gemini -> Groq -> OpenRouter by
+    default). Each provider is tried in order; on transient failures the
+    next provider is used. Public API is unchanged from the single-provider
+    implementation so callers in main.py do not need to be modified.
     """
 
     def __init__(self):
-        if not settings.gemini_api_key:
+        self.providers = build_provider_chain(settings)
+        if not self.providers:
             raise ValueError(
-                "Gemini API key is not configured. Please set GEMINI_API_KEY in your .env file."
+                "No AI provider is configured. Please set GEMINI_API_KEY, "
+                "GROQ_API_KEY, or OPENROUTER_API_KEY in your .env file."
             )
-        self.client = genai.Client(api_key=settings.gemini_api_key)
+        names = ", ".join(p.name for p in self.providers)
+        print(f"[ai] provider chain: {names}")
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
 
     def generate_resume_summary(
-        self, resume_text: str, keywords_found: list, keywords_missing: list, score: int
+        self,
+        resume_text: str,
+        keywords_found: list,
+        keywords_missing: list,
+        score: int,
     ) -> Dict[str, Any]:
         """
-        Generate an AI summary of the resume, detect UAE presence, and extract employment history
+        Generate an AI summary of the resume, detect UAE presence, and extract
+        employment history.
 
-        Args:
-            resume_text: Full text content of the resume
-            keywords_found: List of keywords found in the resume
-            keywords_missing: List of keywords missing from the resume
-            score: Calculated keyword match score
-
-        Returns:
-            Dict with 'summary' (str), 'uae_presence' (bool),
-            'employment_history' (list), and 'total_experience_years' (float)
+        Returns a dict with keys ``summary``, ``uae_presence``,
+        ``employment_history``, and ``total_experience_years``. On total
+        failure, ``summary`` will contain a human-readable error string and
+        the other fields will be ``None``.
         """
-        try:
-            today = date.today().strftime("%B %d, %Y")
-            prompt = f"""
+        prompt = self._build_prompt(
+            resume_text, keywords_found, keywords_missing, score
+        )
+
+        last_error: Exception | None = None
+        for provider in self.providers:
+            try:
+                raw = provider.generate_json(
+                    system=SYSTEM_INSTRUCTION,
+                    prompt=prompt,
+                    max_tokens=5000,
+                    temperature=0.4,
+                )
+                return self._parse_response(raw)
+            except AIProviderError as exc:
+                last_error = exc
+                print(f"[ai] provider {provider.name} failed, trying next: {exc}")
+                continue
+            except Exception as exc:  # noqa: BLE001
+                # Defensive: never let a provider bug crash the request.
+                last_error = exc
+                print(f"[ai] provider {provider.name} unexpected error: {exc}")
+                continue
+
+        return {
+            "summary": (f"AI summary unavailable (all providers failed: {last_error})"),
+            "uae_presence": None,
+            "employment_history": None,
+            "total_experience_years": None,
+        }
+
+    def generate_batch_summaries(self, resumes: list) -> list:
+        """Generate summaries for multiple resumes."""
+        for resume in resumes:
+            result = self.generate_resume_summary(
+                resume["text_content"],
+                resume["keywords_found"],
+                resume["keywords_missing"],
+                resume["score"],
+            )
+            resume["ai_summary"] = result.get("summary")
+            resume["uae_presence"] = result.get("uae_presence")
+
+        return resumes
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _build_prompt(
+        resume_text: str,
+        keywords_found: list,
+        keywords_missing: list,
+        score: int,
+    ) -> str:
+        today = date.today().strftime("%B %d, %Y")
+        return f"""
 You are an expert recruiter analyzing a candidate's resume.
 
 Today's date is {today}.
@@ -82,104 +154,46 @@ Rules:
 Respond ONLY with valid JSON, no additional text or markdown formatting.
 """
 
-            response = self.client.models.generate_content(
-                model=settings.gemini_model,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction="You are an expert technical recruiter who provides concise, objective candidate assessments. Always respond with valid JSON only.",
-                    max_output_tokens=5000,
-                    temperature=0.4,
-                    response_mime_type="application/json",
-                    thinking_config=ThinkingConfig(thinking_budget=0),
-                ),
-            )
+    @staticmethod
+    def _parse_response(raw: str) -> Dict[str, Any]:
+        """Normalize a raw model response into the expected dict shape."""
+        response_text = (raw or "").strip()
 
-            response_content = response.text
-            if response_content is None:
-                return {
-                    "summary": "Error: Empty response from AI",
-                    "uae_presence": None,
-                    "employment_history": None,
-                    "total_experience_years": None,
-                }
+        # Strip markdown JSON fences if present (e.g. ```json ... ```)
+        if response_text.startswith("```"):
+            response_text = re.sub(r"^```(?:json)?\s*\n?", "", response_text)
+            response_text = re.sub(r"\n?```\s*$", "", response_text)
+            response_text = response_text.strip()
 
-            response_text = response_content.strip()
+        print(f"[ai] raw response (first 500 chars): {response_text[:500]}")
 
-            # Strip markdown JSON fences if present (e.g. ```json ... ```)
-            if response_text.startswith("```"):
-                response_text = re.sub(r"^```(?:json)?\s*\n?", "", response_text)
-                response_text = re.sub(r"\n?```\s*$", "", response_text)
-                response_text = response_text.strip()
-
-            # Debug: Log token usage and raw response
-            usage = response.usage_metadata
-            if usage:
-                print(
-                    f"[Gemini] Tokens used - prompt: {usage.prompt_token_count}, "
-                    f"completion: {usage.candidates_token_count}, "
-                    f"total: {usage.total_token_count}"
-                )
-            else:
-                print("[Gemini] No usage data")
-            if response.candidates:
-                print(f"[Gemini] Finish reason: {response.candidates[0].finish_reason}")
-            print(f"[Gemini] Raw response (first 500 chars): {response_text[:500]}")
-
-            # Parse JSON response
-            try:
-                result = json.loads(response_text)
-                summary = result.get("summary", "")
-                # Handle case where AI returns summary as a list instead of string
-                if isinstance(summary, list):
-                    summary = "\n".join(str(item) for item in summary)
-                history = result.get("employment_history")
-                total_years = result.get("total_experience_years")
-                print(
-                    f"[Gemini] Employment entries: {len(history) if history else 0}, Total years: {total_years}"
-                )
-                return {
-                    "summary": summary,
-                    "uae_presence": result.get("uae_presence", False),
-                    "employment_history": history,
-                    "total_experience_years": total_years,
-                }
-            except json.JSONDecodeError as e:
-                # Fallback if JSON parsing fails - return the raw text as summary
-                print(f"[Gemini] JSON parse error: {e}")
-                print(f"[Gemini] Full response that failed parsing: {response_text}")
-                return {
-                    "summary": response_text,
-                    "uae_presence": None,
-                    "employment_history": None,
-                    "total_experience_years": None,
-                }
-
-        except Exception as e:
+        try:
+            result = json.loads(response_text)
+        except json.JSONDecodeError as exc:
+            print(f"[ai] JSON parse error: {exc}")
+            print(f"[ai] full response that failed parsing: {response_text}")
             return {
-                "summary": f"Error generating AI summary: {str(e)}",
+                "summary": response_text,
                 "uae_presence": None,
                 "employment_history": None,
                 "total_experience_years": None,
             }
 
-    def generate_batch_summaries(self, resumes: list) -> list:
-        """
-        Generate summaries for multiple resumes
+        summary = result.get("summary", "")
+        # Defensive: some models return summary as a list of bullets
+        if isinstance(summary, list):
+            summary = "\n".join(str(item) for item in summary)
 
-        Args:
-            resumes: List of resume data dictionaries
+        history = result.get("employment_history")
+        total_years = result.get("total_experience_years")
+        print(
+            f"[ai] employment entries: {len(history) if history else 0}, "
+            f"total years: {total_years}"
+        )
 
-        Returns:
-            List of resumes with AI summaries and UAE presence added
-        """
-        for resume in resumes:
-            result = self.generate_resume_summary(
-                resume["text_content"],
-                resume["keywords_found"],
-                resume["keywords_missing"],
-                resume["score"],
-            )
-            resume["ai_summary"] = result.get("summary")
-            resume["uae_presence"] = result.get("uae_presence")
-
-        return resumes
+        return {
+            "summary": summary,
+            "uae_presence": result.get("uae_presence", False),
+            "employment_history": history,
+            "total_experience_years": total_years,
+        }
