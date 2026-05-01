@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     # Gemini API key for AI summary generation
     gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
     # Gemini model to use
-    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
     # Minimum keyword score threshold (default: 50)
     min_keyword_score: int = int(os.getenv("MIN_KEYWORD_SCORE", "50"))

@@ -14,7 +14,7 @@ services:
     environment:
       - USE_AI=${USE_AI:-False}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
       - MIN_KEYWORD_SCORE=${MIN_KEYWORD_SCORE:-50}
     # env_file:
     #   - ./backend/.env
