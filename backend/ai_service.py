@@ -1,7 +1,9 @@
 import json
 import re
 from datetime import date
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
+from dateutil import parser as _dateparser
 
 from ai_providers import AIProviderError, build_provider_chain
 from config import settings
@@ -11,6 +13,54 @@ SYSTEM_INSTRUCTION = (
     "You are an expert technical recruiter who provides concise, objective "
     "candidate assessments. Always respond with valid JSON only."
 )
+
+# Tokens that mean "job is ongoing" -> treat end date as today.
+_PRESENT_RE = re.compile(
+    r"present|current|now|ongoing|till\s*date|to\s*date|todate|to\s*present",
+    re.IGNORECASE,
+)
+
+
+def _parse_month_year(value: Any) -> Optional[date]:
+    """
+    Parse a resume date string into a date anchored to the first of the month.
+
+    Returns today's date for "Present"/"Current"/etc, and None if the value is
+    empty or cannot be parsed. Day precision is discarded (anchored to day 1)
+    because resumes rarely provide it and month granularity is sufficient.
+    """
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if _PRESENT_RE.search(text):
+        return date.today()
+    try:
+        # default fills in missing components; we only trust year + month.
+        parsed = _dateparser.parse(text, default=date(1900, 1, 1))
+    except (ValueError, OverflowError, TypeError):
+        return None
+    return date(parsed.year, parsed.month, 1)
+
+
+def _compute_duration_years(start: Any, end: Any) -> float:
+    """
+    Deterministically compute duration in years between two resume dates.
+
+    LLMs are unreliable at date arithmetic, so we always recompute this in
+    Python. Uses exclusive month-difference (Aug 2024 -> Jul 2026 = 23 months
+    = 1.92 years). An ongoing/unparseable end date is treated as today; an
+    unparseable start date yields 0.0.
+    """
+    start_date = _parse_month_year(start)
+    if start_date is None:
+        return 0.0
+    end_date = _parse_month_year(end) or date.today()
+    months = (end_date.year - start_date.year) * 12 + (
+        end_date.month - start_date.month
+    )
+    return round(max(months, 0) / 12, 2)
 
 
 class AIService:
@@ -146,10 +196,10 @@ Rules:
   - Addresses or locations mentioning UAE, Dubai, Abu Dhabi, Sharjah, Ajman, Fujairah, Ras Al Khaimah, or Umm Al Quwain
   - Most recent job location being in the UAE
 - IMPORTANT: For employment_history, first count ALL distinct job positions listed in the resume, then extract EVERY SINGLE ONE in reverse chronological order (most recent first). Do NOT skip, merge, or combine any positions. If the resume lists 7 jobs, the array MUST have exactly 7 entries.
-  - Calculate duration_years as the difference in years between start and end dates, rounded to 2 decimal places.
-  - If a position is current/ongoing, use "Present" as end_date and calculate duration from start_date to today's date ({today}).
+  - Extract start_date and end_date EXACTLY as normalized month/year values (e.g. "Aug 2024"). Accurate dates matter most; duration will be computed programmatically.
+  - If a position is current/ongoing, use "Present" as the end_date.
   - If location is not clear, use "Not specified".
-- For total_experience_years, sum all the duration_years values, rounded to 2 decimal places.
+  - For duration_years and total_experience_years, provide your best estimate as a placeholder; these values are recomputed programmatically from the dates, so do not spend effort on the arithmetic.
 
 Respond ONLY with valid JSON, no additional text or markdown formatting.
 """
@@ -186,6 +236,21 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
 
         history = result.get("employment_history")
         total_years = result.get("total_experience_years")
+
+        # Recompute every duration deterministically in Python; never trust the
+        # LLM's date arithmetic. Total is the naive sum of corrected durations.
+        if isinstance(history, list):
+            corrected_total = 0.0
+            for entry in history:
+                if not isinstance(entry, dict):
+                    continue
+                duration = _compute_duration_years(
+                    entry.get("start_date"), entry.get("end_date")
+                )
+                entry["duration_years"] = duration
+                corrected_total += duration
+            total_years = round(corrected_total, 2)
+
         print(
             f"[ai] employment entries: {len(history) if history else 0}, "
             f"total years: {total_years}"
