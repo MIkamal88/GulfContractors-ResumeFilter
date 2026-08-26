@@ -7,7 +7,7 @@
 set -e  # Exit on error
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEPLOY_PATH="/var/www/html/erp/resumefilter"
+DEPLOY_PATH="/var/www/resumefilter"
 
 echo "=========================================="
 echo "GC Resume Filter - Apache Deployment"
@@ -92,11 +92,11 @@ echo ""
 
 # Step 3: Build frontend for production with base path
 echo -e "${GREEN}[3/7] Building frontend for production...${NC}"
-echo "Building with base path: /erp/resumefilter/"
+echo "Building with base path: /resumefilter/"
 npm run build
 echo ""
 
-# Step 4: Deploy frontend to /var/www/html/erp/resumefilter
+# Step 4: Deploy frontend to /var/www/resumefilter
 echo -e "${GREEN}[4/7] Deploying frontend to $DEPLOY_PATH...${NC}"
 
 # Create deployment directory
@@ -241,11 +241,11 @@ echo "Deployment Complete!"
 echo "==========================================${NC}"
 echo ""
 echo "Access the application at:"
-echo -e "  ${GREEN}http://YOUR_SERVER_IP/erp/resumefilter/${NC}"
+echo -e "  ${GREEN}http://YOUR_SERVER_IP/resumefilter/${NC}"
 echo ""
 echo "Services:"
 echo "  - Frontend: $DEPLOY_PATH"
-echo "  - Backend API: http://YOUR_SERVER_IP/erp/resumefilter/api (proxied to port 8000)"
+echo "  - Backend API: http://YOUR_SERVER_IP/resumefilter/api (proxied to port 8000)"
 echo ""
 echo "Useful commands:"
 echo "  - Check backend status: sudo systemctl status gc-resumefilter-backend"
