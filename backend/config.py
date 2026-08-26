@@ -15,21 +15,19 @@ class Settings(BaseSettings):
 
     # Gemini (Google AI Studio) https://aistudio.google.com/apikey
     gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
-    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 
-    # Groq (https://console.groq.com/keys) - 30K TPM, 1000 RPD on free tier
+    # Groq (https://console.groq.com/keys) - free tier
     groq_api_key: Optional[str] = os.getenv("GROQ_API_KEY")
-    groq_model: str = os.getenv(
-        "GROQ_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct"
-    )
+    groq_model: str = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
     # OpenRouter (https://openrouter.ai/keys) - 50 RPD free, 1000 RPD with credits
     openrouter_api_key: Optional[str] = os.getenv("OPENROUTER_API_KEY")
     openrouter_model: str = os.getenv(
-        "OPENROUTER_MODEL", "qwen/qwen3-next-80b-a3b-instruct:free"
+        "OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free"
     )
     openrouter_fallback_model: str = os.getenv(
-        "OPENROUTER_FALLBACK_MODEL", "nvidia/nemotron-nano-9b-v2:free"
+        "OPENROUTER_FALLBACK_MODEL", "minimax/minimax-m2.7:free"
     )
     openrouter_site_url: str = os.getenv("OPENROUTER_SITE_URL", "")
     openrouter_app_name: str = os.getenv(

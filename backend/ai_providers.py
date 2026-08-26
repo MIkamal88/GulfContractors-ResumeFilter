@@ -264,13 +264,13 @@ class OpenAICompatibleProvider(BaseProvider):
 class GroqProvider(OpenAICompatibleProvider):
     name = "groq"
     base_url = "https://api.groq.com/openai/v1"
-    default_model = "meta-llama/llama-4-scout-17b-16e-instruct"
+    default_model = "openai/gpt-oss-120b"
 
 
 class OpenRouterProvider(OpenAICompatibleProvider):
     name = "openrouter"
     base_url = "https://openrouter.ai/api/v1"
-    default_model = "qwen/qwen3-next-80b-a3b-instruct:free"
+    default_model = "nvidia/nemotron-3-super-120b-a12b:free"
 
     def __init__(
         self,
