@@ -205,6 +205,37 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
 """
 
     @staticmethod
+    def _try_parse_json(text: str) -> Optional[dict]:
+        """
+        Parse ``text`` as a JSON object, tolerating surrounding prose.
+
+        Tries a direct parse first; if that fails, retries on the substring
+        between the first ``{`` and the last ``}`` so that reasoning text
+        wrapped around an otherwise valid object is still usable. Returns
+        None when nothing parseable is found.
+        """
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, dict):
+                return parsed
+            print(f"[ai] JSON parse produced non-object: {type(parsed).__name__}")
+        except json.JSONDecodeError as exc:
+            print(f"[ai] JSON parse error: {exc}")
+
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end != -1 and start < end:
+            try:
+                parsed = json.loads(text[start : end + 1])
+                if isinstance(parsed, dict):
+                    return parsed
+                print(f"[ai] embedded JSON produced non-object: {type(parsed).__name__}")
+            except json.JSONDecodeError as exc:
+                print(f"[ai] embedded JSON parse error: {exc}")
+
+        return None
+
+    @staticmethod
     def _parse_response(raw: str) -> Dict[str, Any]:
         """Normalize a raw model response into the expected dict shape."""
         response_text = (raw or "").strip()
@@ -215,15 +246,23 @@ Respond ONLY with valid JSON, no additional text or markdown formatting.
             response_text = re.sub(r"\n?```\s*$", "", response_text)
             response_text = response_text.strip()
 
+        # Strip chain-of-thought blocks emitted by reasoning models.
+        response_text = re.sub(
+            r"<think>.*?</think>",
+            "",
+            response_text,
+            flags=re.IGNORECASE | re.DOTALL,
+        ).strip()
+
         print(f"[ai] raw response (first 500 chars): {response_text[:500]}")
 
-        try:
-            result = json.loads(response_text)
-        except json.JSONDecodeError as exc:
-            print(f"[ai] JSON parse error: {exc}")
+        result = AIService._try_parse_json(response_text)
+        if result is None:
             print(f"[ai] full response that failed parsing: {response_text}")
             return {
-                "summary": response_text,
+                "summary": (
+                    "AI returned a malformed response. Please re-run the analysis."
+                ),
                 "uae_presence": None,
                 "employment_history": None,
                 "total_experience_years": None,

@@ -289,7 +289,9 @@ class OpenRouterProvider(OpenAICompatibleProvider):
 
         # OpenRouter's "models" array enables in-request fallback to a second
         # free model when the primary is rate-limited or unavailable.
-        extra_body: dict = {}
+        # Reasoning is disabled so reasoning models do not leak chain-of-thought
+        # into the response content (and blow past the token cap).
+        extra_body: dict = {"reasoning": {"enabled": False}}
         chain: List[str] = []
         primary = model or self.default_model
         chain.append(primary)
